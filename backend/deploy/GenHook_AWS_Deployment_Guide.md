@@ -153,118 +153,39 @@ ls -la /opt/genhook/
 
 ## Service Configuration
 
-### Step 1: Configure Nginx
+### Step 1: Run Automated Service Setup
 
-Create nginx configuration file:
-
-```bash
-sudo nano /etc/nginx/sites-available/genhook
-```
-
-Configuration content:
-```nginx
-server {
-    listen 80;
-    server_name YOUR_DOMAIN_OR_IP;
-    
-    # Security headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=webhook_limit:10m rate=100r/m;
-    limit_req zone=webhook_limit burst=20 nodelay;
-    
-    # Webhook endpoints
-    location /webhook/ {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_read_timeout 30s;
-        proxy_connect_timeout 10s;
-        client_max_body_size 1M;
-        
-        access_log /var/log/nginx/genhook_webhook.log;
-    }
-    
-    # Health check endpoint
-    location /health {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_read_timeout 5s;
-        proxy_connect_timeout 2s;
-    }
-    
-    # Block all other paths
-    location / {
-        return 404;
-    }
-    
-    access_log /var/log/nginx/genhook_access.log;
-    error_log /var/log/nginx/genhook_error.log;
-}
-```
-
-### Step 2: Configure Supervisor
-
-Create supervisor configuration:
+The automated setup script handles all service configuration:
 
 ```bash
-sudo nano /etc/supervisor/conf.d/genhook.conf
+cd /opt/genhook/backend
+sudo ./deploy/setup_services.sh
 ```
 
-Configuration content:
-```ini
-[program:genhook]
-command=/opt/genhook/venv/bin/python main.py
-directory=/opt/genhook/backend
-user=genhook
-autostart=true
-autorestart=true
-startretries=3
-redirect_stderr=true
-stdout_logfile=/var/log/genhook/app.log
-stdout_logfile_maxbytes=50MB
-stdout_logfile_backups=5
-environment=PYTHONPATH="/opt/genhook/backend"
+**This script automatically:**
+- ✅ Creates log directories with proper permissions
+- ✅ Copies nginx configuration to sites-available  
+- ✅ Adds rate limiting to main nginx.conf
+- ✅ Enables the GenHook site and disables default
+- ✅ Installs supervisor configuration
+- ✅ Makes all scripts executable
+- ✅ Starts both genhook and genhook-monitor services
 
-[program:genhook-monitor]
-command=/opt/genhook/backend/deploy/monitor.sh
-directory=/opt/genhook
-user=genhook
-autostart=true
-autorestart=true
-startretries=3
-redirect_stderr=true
-stdout_logfile=/var/log/genhook/monitor.log
-```
+### Step 2: Verify Services
 
-### Step 3: Setup Services
+After running the setup script, verify everything is working:
 
 ```bash
-# Create log directories
-sudo mkdir -p /var/log/genhook
-sudo chown genhook:genhook /var/log/genhook
-
-# Enable nginx site
-sudo ln -sf /etc/nginx/sites-available/genhook /etc/nginx/sites-enabled/genhook
-sudo rm -f /etc/nginx/sites-enabled/default
+# Check service status
+sudo supervisorctl status
+# Should show both genhook and genhook-monitor as RUNNING
 
 # Test nginx configuration
 sudo nginx -t
+# Should show: configuration file syntax is OK
 
-# Reload services
-sudo systemctl reload nginx
-sudo supervisorctl reread
-sudo supervisorctl update
-
-# Start GenHook services
-sudo supervisorctl start genhook
-sudo supervisorctl start genhook-monitor
+# Check logs
+sudo tail -f /var/log/genhook/app.log
 ```
 
 ---
@@ -330,22 +251,19 @@ sudo supervisorctl tail genhook stdout
 ### Test 1: Health Check
 
 ```bash
-# Test health endpoint
+# Test health endpoint (replace YOUR-ELASTIC-IP with actual IP)
 curl http://YOUR-ELASTIC-IP/health
 
 # Expected response:
 {
-  "status": "healthy",
-  "version": "1.0.0",
-  "webhook_types": 4,
-  "timestamp": "2024-08-05T15:38:00Z"
+  "status": "healthy"
 }
 ```
 
 ### Test 2: Webhook Processing
 
 ```bash
-# Test GitHub webhook
+# Test GitHub webhook (replace YOUR-ELASTIC-IP with actual IP)
 curl -X POST http://YOUR-ELASTIC-IP/webhook/github \
   -H 'Content-Type: application/json' \
   -d '{
@@ -361,8 +279,7 @@ curl -X POST http://YOUR-ELASTIC-IP/webhook/github \
 {
   "status": "success",
   "message": "Webhook processed and alert sent to SL1",
-  "generated_message": "MAJOR: GitHub opened on GenHook-AWS: \"Deployment Test\" by deployer",
-  "processing_time_ms": 45.2
+  "generated_message": "MAJOR: GitHub opened on GenHook-AWS: \"Deployment Test\" by deployer"
 }
 ```
 
@@ -390,7 +307,7 @@ sudo supervisorctl status
    - Click **Settings → Webhooks → Add webhook**
 
 2. **Configure Webhook**:
-   - **Payload URL**: `http://YOUR-ELASTIC-IP/webhook/github`
+   - **Payload URL**: `http://YOUR-ELASTIC-IP/webhook/github` (replace with your server's IP)
    - **Content type**: `application/json`
    - **Secret**: Leave empty (Phase 3 will add signature verification)
    - **Events**: Select events you want to monitor:
@@ -409,7 +326,7 @@ sudo supervisorctl status
    - Go to **Developers → Webhooks → Add endpoint**
 
 2. **Configure Endpoint**:
-   - **Endpoint URL**: `http://YOUR-ELASTIC-IP/webhook/stripe`
+   - **Endpoint URL**: `http://YOUR-ELASTIC-IP/webhook/stripe` (replace with your server's IP)
    - **Events**: Select relevant events:
      - `payment_intent.succeeded`
      - `payment_intent.payment_failed`
@@ -426,7 +343,7 @@ sudo supervisorctl status
    - Create new app or use existing
 
 2. **Configure Event Subscriptions**:
-   - **Request URL**: `http://YOUR-ELASTIC-IP/webhook/slack`
+   - **Request URL**: `http://YOUR-ELASTIC-IP/webhook/slack` (replace with your server's IP)
    - **Subscribe to events**:
      - `message.channels`
      - `app_mention`
