@@ -13,6 +13,12 @@ sudo cp /opt/genhook/backend/deploy/nginx.conf /etc/nginx/sites-available/genhoo
 sudo ln -sf /etc/nginx/sites-available/genhook /etc/nginx/sites-enabled/genhook
 sudo rm -f /etc/nginx/sites-enabled/default
 
+# Add rate limiting to main nginx.conf (if not already present)
+if ! grep -q "limit_req_zone.*webhook_limit" /etc/nginx/nginx.conf; then
+    echo "Adding rate limiting configuration to nginx.conf..."
+    sudo sed -i '/http {/a\    # GenHook rate limiting\n    limit_req_zone $binary_remote_addr zone=webhook_limit:10m rate=100r/m;' /etc/nginx/nginx.conf
+fi
+
 # Test nginx configuration
 sudo nginx -t
 
