@@ -28,8 +28,8 @@ sudo chown genhook:genhook /opt/genhook
 sudo -u genhook bash << 'EOF'
 cd /opt/genhook
 
-# Clone repository (replace YOUR_USERNAME with your actual GitHub username)
-git clone https://github.com/YOUR_USERNAME/GenHook.git . || git pull origin main
+# Clone repository
+git clone https://github.com/rudipoppes/GenHook.git . || git pull origin main
 
 # Create virtual environment
 python3.11 -m venv venv
