@@ -119,7 +119,7 @@ ssh -i /path/to/your-key.pem ubuntu@YOUR-ELASTIC-IP
 
 ```bash
 # Download installation script
-curl -o install_server.sh https://raw.githubusercontent.com/YOUR-USERNAME/GenHook/main/backend/deploy/install_server.sh
+curl -o install_server.sh https://raw.githubusercontent.com/rudipoppes/GenHook/main/backend/deploy/install_server.sh
 
 # Make executable and run
 chmod +x install_server.sh
@@ -322,15 +322,6 @@ sudo supervisorctl tail genhook stdout
 # Should show: "✅ Using production config: /opt/genhook/backend/config/app-config.prod.ini"
 ```
 
-### Step 3: Restart Services
-
-```bash
-# Restart application with new configuration
-sudo supervisorctl restart genhook
-
-# Check status
-sudo supervisorctl status
-```
 
 ---
 
@@ -763,7 +754,7 @@ grep -c "Successfully sent alert to SL1" /var/log/genhook/app.log
 ## Support Information
 
 ### Documentation
-- **GenHook Repository**: https://github.com/YOUR-USERNAME/GenHook
+- **GenHook Repository**: https://github.com/rudipoppes/GenHook
 - **AWS EC2 Documentation**: https://docs.aws.amazon.com/ec2/
 - **FastAPI Documentation**: https://fastapi.tiangolo.com/
 
