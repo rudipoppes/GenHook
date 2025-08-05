@@ -6,27 +6,27 @@ LOG_FILE="/var/log/genhook/monitor.log"
 HEALTH_URL="http://localhost:8000/health"
 CHECK_INTERVAL=60  # seconds
 
-mkdir -p /var/log/genhook
+# Ensure log file exists and is writable
+touch "$LOG_FILE" 2>/dev/null || {
+    echo "Warning: Cannot write to $LOG_FILE, using /tmp/genhook-monitor.log"
+    LOG_FILE="/tmp/genhook-monitor.log"
+    touch "$LOG_FILE"
+}
 
-echo "🔍 GenHook Monitor started at $(date)" >> $LOG_FILE
+echo "🔍 GenHook Monitor started at $(date)" >> "$LOG_FILE"
 
 while true; do
-    if curl -f -s $HEALTH_URL > /dev/null; then
-        echo "$(date): ✅ Health check passed" >> $LOG_FILE
+    if curl -f -s "$HEALTH_URL" > /dev/null 2>&1; then
+        echo "$(date): ✅ Health check passed" >> "$LOG_FILE"
     else
-        echo "$(date): ❌ Health check failed - restarting service" >> $LOG_FILE
-        sudo supervisorctl restart genhook
+        echo "$(date): ❌ Health check failed - logging failure" >> "$LOG_FILE"
         
-        # Wait for restart
-        sleep 10
+        # Instead of restarting, just log the failure
+        # Supervisor will handle automatic restarts based on its configuration
+        echo "$(date): 🚨 Service health check failed - supervisor will handle restart" >> "$LOG_FILE"
         
-        # Check if restart worked
-        if curl -f -s $HEALTH_URL > /dev/null; then
-            echo "$(date): ✅ Service restarted successfully" >> $LOG_FILE
-        else
-            echo "$(date): 🚨 CRITICAL: Service failed to restart!" >> $LOG_FILE
-            # TODO: Send alert to ops team
-        fi
+        # Wait a bit before next check
+        sleep 30
     fi
     
     sleep $CHECK_INTERVAL
