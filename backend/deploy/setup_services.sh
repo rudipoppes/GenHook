@@ -27,6 +27,8 @@ sudo cp /opt/genhook/backend/deploy/supervisor.conf /etc/supervisor/conf.d/genho
 
 # Make scripts executable
 chmod +x /opt/genhook/backend/deploy/monitor.sh
+chmod +x /opt/genhook/backend/deploy/check_status.sh
+chmod +x /opt/genhook/backend/deploy/setup_services.sh
 
 # Reload services
 sudo systemctl reload nginx
