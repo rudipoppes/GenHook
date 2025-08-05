@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 import logging
+import os
 from app.core.config import get_config, get_webhook_config
 from app.core.extractor import extract_fields
 from app.services.sl1_service import sl1_service

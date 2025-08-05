@@ -191,10 +191,22 @@ def get_config_manager() -> ConfigManager:
 def get_config():
     """Get the raw ConfigParser for backward compatibility."""
     from configparser import ConfigParser
+    import os
+    
     config = ConfigParser()
     backend_dir = Path(__file__).parent.parent.parent
-    app_config_path = backend_dir / "config" / "app-config.ini"
-    config.read(str(app_config_path))
+    
+    # Auto-detect environment: production config takes precedence if it exists
+    prod_config_path = backend_dir / "config" / "app-config.prod.ini"
+    dev_config_path = backend_dir / "config" / "app-config.ini"
+    
+    if prod_config_path.exists():
+        config.read(str(prod_config_path))
+        print(f"✅ Using production config: {prod_config_path}")
+    else:
+        config.read(str(dev_config_path))
+        print(f"✅ Using development config: {dev_config_path}")
+    
     return config
 
 def get_webhook_config():

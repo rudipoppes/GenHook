@@ -309,21 +309,17 @@ queue_size = 1000    # Small queue for MVP
 processing_timeout = 30
 ```
 
-### Step 2: Update Main Application
+### Step 2: Restart Services
 
-Update the main application to use production settings:
+The application automatically detects and uses production configuration when `app-config.prod.ini` exists:
 
 ```bash
-# Edit main.py to use production configuration
-nano main.py
-```
+# Restart GenHook service to use production configuration
+sudo supervisorctl restart genhook
 
-Add environment detection:
-```python
-import os
-
-# Use production config if available
-config_file = 'config/app-config.prod.ini' if os.path.exists('config/app-config.prod.ini') else 'config/app-config.ini'
+# Verify it's using production config (check logs)
+sudo supervisorctl tail genhook stdout
+# Should show: "✅ Using production config: /opt/genhook/backend/config/app-config.prod.ini"
 ```
 
 ### Step 3: Restart Services
