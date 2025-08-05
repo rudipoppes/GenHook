@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenHook AWS Deployment Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .highlight-box {
+            background-color: #e8f6ff;
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background-color: #2980b9;
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+            
+            body {
+                max-width: none;
+                margin: 0;
+                padding: 15px;
+            }
+            
+            h1, h2 {
+                page-break-after: avoid;
+            }
+            
+            pre {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">Print to PDF</button>
+    
+    <div id="content">
+        <!-- Content will be loaded here by JavaScript -->
+    </div>
+
+    <script>
+        // Function to convert markdown to HTML (basic implementation)
+        function markdownToHtml(markdown) {
+            let html = markdown;
+            
+            // Convert headers
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            
+            // Convert code blocks
+            html = html.replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>');
+            
+            // Convert inline code
+            html = html.replace(/`([^`]+)`/gim, '<code>$1</code>');
+            
+            // Convert bold and italic
+            html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+            
+            // Convert line breaks
+            html = html.replace(/\n\n/gim, '</p><p>');
+            html = html.replace(/\n/gim, '<br>');
+            
+            // Wrap in paragraphs
+            html = '<p>' + html + '</p>';
+            
+            // Clean up empty paragraphs
+            html = html.replace(/<p><\/p>/gim, '');
+            html = html.replace(/<p><h/gim, '<h');
+            html = html.replace(/<\/h([1-6])><\/p>/gim, '</h$1>');
+            html = html.replace(/<p><pre>/gim, '<pre>');
+            html = html.replace(/<\/pre><\/p>/gim, '</pre>');
+            
+            return html;
+        }
+        
+        // Load markdown content (you'll need to paste it here or load from file)
+        const markdownContent = `
+# GenHook AWS Deployment Guide
+**Production-Ready Webhook Processing System**
+
+---
+
+## Overview
+
+This guide provides step-by-step instructions for deploying GenHook, a configuration-driven webhook receiver, to AWS EC2. GenHook processes webhooks from multiple services (GitHub, Stripe, Slack, AWS) and forwards formatted alerts to SL1 monitoring systems.
+
+### Key Features
+- **Multi-Service Support**: GitHub, Stripe, Slack, AWS webhooks
+- **Configuration-Driven**: No code changes for new webhook types
+- **Template-Based Messaging**: Flexible alert generation
+- **SL1 Integration**: Direct API integration with retry logic
+- **Production-Ready**: Nginx proxy, process management, logging
+
+## Quick Start Summary
+
+1. **Launch EC2** (t3.small, Ubuntu 22.04, open ports 22/80/443)
+2. **Run install script** from your repo
+3. **Configure production settings** (SL1 credentials, domain)  
+4. **Setup services** (nginx, supervisor)
+5. **Test endpoints** (health check + webhook test)
+6. **Configure external webhooks** (GitHub, Stripe, etc.)
+
+## Prerequisites
+
+### AWS Account Requirements
+- Active AWS account with billing enabled
+- IAM user with EC2, Security Groups, and optionally Route 53 permissions
+- AWS CLI installed and configured locally
+
+### Required Knowledge
+- Basic Linux command line operations
+- SSH key management
+- DNS configuration (if using custom domain)
+
+## Cost Analysis
+
+### AWS Monthly Costs (US East Region)
+
+**Compute:**
+- **t3.small EC2 Instance**: $15.33/month
+- **20GB EBS Storage**: $2.00/month
+- **Elastic IP**: $0.00 (free when attached)
+
+**Estimated Monthly Total**: $17-25/month
+
+## Support Information
+
+### Documentation
+- **GenHook Repository**: https://github.com/YOUR-USERNAME/GenHook
+- **AWS EC2 Documentation**: https://docs.aws.amazon.com/ec2/
+- **FastAPI Documentation**: https://fastapi.tiangolo.com/
+
+*This is a simplified version. For the complete guide, please refer to the full markdown file.*
+        `;
+        
+        // Convert and display content
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('content').innerHTML = markdownToHtml(markdownContent);
+        });
+        
+        // Print function
+        function printToPDF() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
