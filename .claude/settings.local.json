@@ -26,7 +26,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pandoc:*)",
+      "Bash(open SSL_Setup_Guide.html)",
+      "Bash(./generate_ssl_pdf.sh:*)"
     ],
     "deny": []
   }
