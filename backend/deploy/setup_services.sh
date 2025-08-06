@@ -4,9 +4,13 @@ set -e
 
 echo "🔧 Configuring services..."
 
-# Create log directories
+# Create log directories and files
 sudo mkdir -p /var/log/genhook
-sudo chown genhook:genhook /var/log/genhook
+sudo touch /var/log/genhook/app.log
+sudo touch /var/log/genhook/monitor.log
+sudo chown -R genhook:genhook /var/log/genhook
+sudo chmod 755 /var/log/genhook
+sudo chmod 644 /var/log/genhook/*.log
 
 # Configure Nginx
 sudo cp /opt/genhook/backend/deploy/nginx.conf /etc/nginx/sites-available/genhook
