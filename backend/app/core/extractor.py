@@ -14,7 +14,8 @@ class FieldExtractor:
     - Simple field: 'field_name'
     - Nested object: 'object{subfield}'  
     - Deep nesting: 'level1{level2{level3}}'
-    - Array access: 'array_field{item_property}'
+    - Array access: 'array_field{item_property}' (processes all array items)
+    - Array indexing: 'array_field[0]{property}' (specific index)
     """
     
     def __init__(self):
@@ -120,12 +121,17 @@ class FieldExtractor:
                 index = int(field_name)
                 next_value = data[index] if 0 <= index < len(data) else None
             else:
-                # Look for field in all array items (take first match)
-                next_value = None
+                # Extract field from all array items
+                next_value = []
                 for item in data:
                     if isinstance(item, dict) and field_name in item:
-                        next_value = item[field_name]
-                        break
+                        next_value.append(item[field_name])
+                
+                # If only one item or no items, simplify the result
+                if len(next_value) == 0:
+                    next_value = None
+                elif len(next_value) == 1:
+                    next_value = next_value[0]
         else:
             return None
         
@@ -164,12 +170,36 @@ class FieldExtractor:
             if value is not None:
                 # Create template-friendly key
                 template_key = self._simplify_pattern(pattern)
-                template_vars[template_key] = value
+                
+                # Handle array values for templates
+                if isinstance(value, list):
+                    # Convert array to string representation for templates
+                    template_vars[template_key] = self._format_array_for_template(value)
+                    # Also provide individual array elements
+                    for i, item in enumerate(value):
+                        template_vars[f"{template_key}[{i}]"] = item
+                else:
+                    template_vars[template_key] = value
                 
                 # Also support the original pattern key
-                template_vars[pattern] = value
+                template_vars[pattern] = template_vars[template_key]
         
         return template_vars
+    
+    def _format_array_for_template(self, array_value: List[Any]) -> str:
+        """
+        Format array values for template substitution.
+        
+        Examples:
+        - ['node', 'cpe'] -> 'node, cpe'
+        - ['down', 'active'] -> 'down, active'
+        """
+        if not array_value:
+            return ""
+        
+        # Convert each item to string and join
+        str_items = [str(item) for item in array_value if item is not None]
+        return ", ".join(str_items)
 
 
 class ExtractionError(Exception):
