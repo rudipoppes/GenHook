@@ -489,21 +489,27 @@
             }
             
             let testPayload = null;
-            if (analyzedPayload && analyzedPayload.original_payload) {
-                testPayload = analyzedPayload.original_payload;
-            } else {
-                const editPayload = document.getElementById('editTestPayload').value.trim();
-                if (editPayload) {
-                    try {
-                        testPayload = JSON.parse(editPayload);
-                    } catch (e) {
-                        showNotification('Error', 'Invalid JSON in test payload', 'error');
-                        return;
-                    }
-                } else {
-                    showNotification('Error', 'No test payload available', 'error');
+            
+            // First, check if user provided a manual test payload (edit mode)
+            const editPayload = document.getElementById('editTestPayload').value.trim();
+            if (editPayload) {
+                try {
+                    testPayload = JSON.parse(editPayload);
+                    console.log('Using manual test payload from textarea');
+                } catch (e) {
+                    showNotification('Error', 'Invalid JSON in test payload', 'error');
                     return;
                 }
+            } 
+            // Otherwise, use the original analyzed payload (if it has real data)
+            else if (analyzedPayload && analyzedPayload.original_payload && Object.keys(analyzedPayload.original_payload).length > 0) {
+                testPayload = analyzedPayload.original_payload;
+                console.log('Using original analyzed payload');
+            } 
+            // No payload available
+            else {
+                showNotification('Error', 'No test payload available. Please paste JSON in the test payload field.', 'error');
+                return;
             }
             
             try {
