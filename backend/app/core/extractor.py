@@ -47,8 +47,7 @@ class FieldExtractor:
                     if simplified_key != pattern:
                         extracted[simplified_key] = value
             except Exception as e:
-                # Log the error but continue processing other fields
-                print(f"Warning: Failed to extract field '{pattern}': {e}")
+                # Continue processing other fields on error
                 extracted[pattern] = None
         
         return extracted
@@ -60,18 +59,13 @@ class FieldExtractor:
         Examples:
         - 'action' -> data['action']
         - 'user{name}' -> data['user']['name']
-        - 'items{0}{title}' -> data['items'][0]['title']
+        - 'data{object}{amount}' -> data['data']['object']['amount']
         """
         if not pattern or not isinstance(data, dict):
             return None
         
-        # Parse the pattern
-        match = self.pattern_regex.match(pattern)
-        if not match:
-            raise ValueError(f"Invalid pattern format: {pattern}")
-        
-        field_name, nested_pattern = match.groups()
-        field_name = field_name.strip()
+        # Parse the pattern with proper brace handling
+        field_name, nested_pattern = self._parse_pattern(pattern)
         
         # Get the top-level field
         if field_name not in data:
@@ -83,8 +77,43 @@ class FieldExtractor:
         if not nested_pattern:
             return current_value
         
-        # Handle nested extraction
-        return self._extract_nested(current_value, nested_pattern)
+        # Handle nested extraction recursively
+        return self._extract_single_field(current_value, nested_pattern) if isinstance(current_value, dict) else self._extract_nested(current_value, nested_pattern)
+    
+    def _parse_pattern(self, pattern: str) -> tuple:
+        """
+        Parse a pattern with proper brace handling.
+        
+        Examples:
+        - 'action' -> ('action', None)
+        - 'user{name}' -> ('user', 'name')  
+        - 'data{object}{amount}' -> ('data', 'object{amount}')
+        """
+        if '{' not in pattern:
+            return pattern, None
+        
+        # Find the first opening brace
+        brace_start = pattern.find('{')
+        field_name = pattern[:brace_start]
+        
+        # Count braces to find the matching closing brace for the first opening brace
+        brace_count = 0
+        for i in range(brace_start, len(pattern)):
+            if pattern[i] == '{':
+                brace_count += 1
+            elif pattern[i] == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    # Found the matching closing brace for the first opening brace
+                    nested_pattern = pattern[brace_start + 1:i]
+                    # If there's more after this closing brace, append it
+                    remaining = pattern[i + 1:]
+                    if remaining:
+                        nested_pattern = nested_pattern + remaining
+                    return field_name, nested_pattern if nested_pattern else None
+        
+        # If we get here, braces don't match
+        raise ValueError(f"Unmatched braces in pattern: {pattern}")
     
     def _extract_nested(self, data: Any, pattern: str) -> Any:
         """

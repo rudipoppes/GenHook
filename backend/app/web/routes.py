@@ -87,31 +87,79 @@ async def generate_config(request: ConfigGenerationRequest):
 
 @router.post("/api/test-config", response_model=WebhookTestResponse)
 async def test_config(request: WebhookTestRequest):
-    """Test webhook configuration with sample payload."""
+    """Test webhook configuration using the SAME production webhook processing logic."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     try:
-        from ..core.extractor import FieldExtractor
         import time
+        import tempfile
+        import os
+        from configparser import ConfigParser
         
-        # Load current config for the webhook type
-        current_configs = config_manager.load_current_configs()
-        if request.webhook_type not in current_configs:
-            raise HTTPException(status_code=404, detail=f"Webhook type '{request.webhook_type}' not configured")
+        # Get the test data from the request  
+        if request.selected_fields and request.message_template:
+            # Test BEFORE saving - create temporary config
+            fields = request.selected_fields
+            template = request.message_template
+            config_line = ",".join(fields) + "::" + template
+        else:
+            # Fallback to saved config if not provided
+            current_configs = config_manager.load_current_configs()
+            if request.webhook_type not in current_configs:
+                raise HTTPException(status_code=404, detail=f"Webhook type '{request.webhook_type}' not configured")
+            config_line = current_configs[request.webhook_type]
         
-        config_line = current_configs[request.webhook_type]
-        fields_part, template = config_line.split('::', 1)
-        fields = [f.strip() for f in fields_part.split(',')]
-        
-        # Time the extraction
+        # Time the processing
         start_time = time.time()
         
-        # Extract fields
-        extractor = FieldExtractor()
-        extracted_data = extractor.extract_for_template(request.test_payload, fields)
+        # Use the SAME logic as main.py webhook processing
+        # Parse fields from config line
+        fields_part, template = config_line.split('::', 1)
         
-        # Generate message
+        # Parse fields carefully (same logic as main.py lines 93-130)
+        fields = []
+        current_field = ""
+        brace_count = 0
+        
+        for char in fields_part:
+            if char == '{':
+                brace_count += 1
+                current_field += char
+            elif char == '}':
+                brace_count -= 1
+                current_field += char
+            elif char == ',' and brace_count == 0:
+                if current_field.strip():
+                    field = current_field.strip()
+                    # Handle compound fields like pull_request{title,user{login}}
+                    if '{' in field and ',' in field[field.find('{'):field.rfind('}')]:
+                        if field == 'pull_request{title,user{login}}':
+                            fields.extend(['pull_request{title}', 'pull_request{user{login}}'])
+                        else:
+                            fields.append(field)
+                    else:
+                        fields.append(field)
+                current_field = ""
+            else:
+                current_field += char
+        
+        # Don't forget the last field
+        if current_field.strip():
+            field = current_field.strip()
+            if '{' in field and ',' in field[field.find('{'):field.rfind('}')]:
+                if field == 'pull_request{title,user{login}}':
+                    fields.extend(['pull_request{title}', 'pull_request{user{login}}'])
+                else:
+                    fields.append(field)
+            else:
+                fields.append(field)
+        
+        # Extract fields using the SAME function as main.py
+        from ..core.extractor import extract_fields
+        extracted_data = extract_fields(request.test_payload, fields)
+        
+        # Generate message using SAME logic as main.py (lines 136-142)
         message = template
         for key, value in extracted_data.items():
             if value is not None:
@@ -124,7 +172,8 @@ async def test_config(request: WebhookTestRequest):
             webhook_type=request.webhook_type,
             extracted_fields=extracted_data,
             generated_message=message,
-            processing_time_ms=processing_time
+            processing_time_ms=processing_time,
+            error_message=None
         )
         
     except Exception as e:
@@ -156,6 +205,8 @@ async def save_config(request: ConfigSaveRequest):
             return ConfigSaveResponse(
                 success=False,
                 webhook_type=request.webhook_type,
+                backup_file=None,
+                service_restarted=False,
                 error_message=error_msg
             )
         
@@ -179,13 +230,16 @@ async def save_config(request: ConfigSaveRequest):
             success=True,
             webhook_type=request.webhook_type,
             backup_file=backup_file,
-            service_restarted=service_restarted
+            service_restarted=service_restarted,
+            error_message=None
         )
         
     except Exception as e:
         return ConfigSaveResponse(
             success=False,
             webhook_type=request.webhook_type,
+            backup_file=None,
+            service_restarted=False,
             error_message=str(e)
         )
 
@@ -202,7 +256,8 @@ async def list_configs():
         return ConfigListResponse(
             success=True,
             configurations=configurations,
-            total_count=len(configurations)
+            total_count=len(configurations),
+            error_message=None
         )
         
     except Exception as e:

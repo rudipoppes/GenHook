@@ -95,6 +95,10 @@ class WebhookTestRequest(BaseModel):
     
     webhook_type: str = Field(..., description="Webhook type name")
     test_payload: Dict[str, Any] = Field(..., description="Test payload to process")
+    
+    # Optional fields for testing BEFORE saving
+    selected_fields: Optional[List[str]] = Field(None, description="Field patterns to test (for test-before-save)")
+    message_template: Optional[str] = Field(None, description="Message template to test (for test-before-save)")
 
 
 class WebhookTestResponse(BaseModel):

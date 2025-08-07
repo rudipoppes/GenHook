@@ -32,15 +32,30 @@ class PayloadAnalyzer:
             PayloadAnalysisResponse with discovered fields
         """
         try:
-            fields = self._discover_fields(payload)
+            # Discover fields including nested ones (but limit depth)
+            fields = []
+            self._discover_fields_recursive(payload, fields, "", "", 0)
             
-            return PayloadAnalysisResponse(
+            # Limit to prevent UI overload
+            fields = fields[:20]
+            
+            response = PayloadAnalysisResponse(
                 success=True,
                 webhook_type=webhook_type,
                 total_fields=len(fields),
-                fields=fields
+                fields=fields,
+                error_message=None
             )
+            return response
             
+        except TimeoutError:
+            return PayloadAnalysisResponse(
+                success=False,
+                webhook_type=webhook_type,
+                total_fields=0,
+                fields=[],
+                error_message="Analysis timed out - payload too complex"
+            )
         except Exception as e:
             return PayloadAnalysisResponse(
                 success=False,
@@ -50,55 +65,72 @@ class PayloadAnalyzer:
                 error_message=str(e)
             )
     
-    def _discover_fields(self, data: Any, path: str = "", pattern: str = "") -> List[FieldInfo]:
+    def _discover_fields_recursive(self, data: Any, fields_list: List[FieldInfo], path: str = "", pattern: str = "", depth: int = 0) -> None:
         """
-        Recursively discover all fields in a JSON structure.
-        
-        Args:
-            data: Current data object
-            path: Current field path (dot notation)
-            pattern: Current GenHook pattern
+        Recursively discover ONLY leaf node fields (fields with actual extractable values).
+        Skips intermediate object containers to show only useful fields.
+        """
+        # Limit depth to prevent infinite recursion
+        if depth > 3:
+            return
             
-        Returns:
-            List of FieldInfo objects
-        """
-        fields = []
-        
         if isinstance(data, dict):
-            for key, value in data.items():
+            for key, value in list(data.items())[:15]:  # Limit items per level
                 new_path = f"{path}.{key}" if path else key
                 new_pattern = f"{pattern}{{{key}}}" if pattern else key
                 
-                field_info = FieldInfo(
-                    path=new_path,
-                    pattern=new_pattern,
-                    field_type=self._get_field_type(value),
-                    sample_value=self._get_sample_value(value),
-                    is_array=isinstance(value, list),
-                    array_length=len(value) if isinstance(value, list) else None
-                )
                 
-                fields.append(field_info)
-                
-                # Recursively process nested structures
-                if isinstance(value, (dict, list)):
-                    child_fields = self._discover_fields(value, new_path, new_pattern)
-                    field_info.children = child_fields
-                    fields.extend(child_fields)
+                try:
+                    # Only add leaf nodes (fields with actual values)
+                    if self._is_leaf_node(value):
+                        field_info = FieldInfo(
+                            path=new_path,
+                            pattern=new_pattern,
+                            field_type=self._get_field_type(value),
+                            sample_value=self._get_sample_value(value),
+                            is_array=isinstance(value, list),
+                            array_length=len(value) if isinstance(value, list) else None,
+                            children=None
+                        )
+                        
+                        fields_list.append(field_info)
+                    
+                    # Continue recursing into nested structures
+                    if isinstance(value, dict) and depth < 3:
+                        self._discover_fields_recursive(value, fields_list, new_path, new_pattern, depth + 1)
+                    elif isinstance(value, list) and value and depth < 3:
+                        # For arrays, analyze the first item to find leaf fields within
+                        first_item = value[0] if value else None
+                        if isinstance(first_item, dict):
+                            self._discover_fields_recursive(first_item, fields_list, new_path, new_pattern, depth + 1)
+                        
+                except Exception as e:
+                    continue
+    
+    def _is_leaf_node(self, value: Any) -> bool:
+        """
+        Determine if a field is a leaf node (contains extractable value).
         
-        elif isinstance(data, list) and data:
-            # Process array elements
-            # Use first non-empty element as template
-            template_item = None
-            for item in data:
-                if item is not None:
-                    template_item = item
-                    break
-            
-            if template_item is not None:
-                fields.extend(self._discover_fields(template_item, path, pattern))
-        
-        return fields
+        Leaf nodes are:
+        - Primitive values: strings, numbers, booleans, null
+        - Arrays of primitives
+        - NOT nested objects or arrays of objects (these are containers)
+        """
+        if value is None:
+            return True  # null values are leaf nodes
+        elif isinstance(value, (str, int, float, bool)):
+            return True  # Primitive values are leaf nodes
+        elif isinstance(value, list):
+            # Arrays are leaf nodes if they contain primitives
+            if not value:  # Empty array
+                return True
+            first_item = value[0]
+            # If first item is primitive, treat as leaf node
+            return isinstance(first_item, (str, int, float, bool, type(None)))
+        elif isinstance(value, dict):
+            return False  # Objects are containers, not leaf nodes
+        else:
+            return True  # Other types (rare) are treated as leaf nodes
     
     def _get_field_type(self, value: Any) -> str:
         """Determine the type of a field value."""
@@ -175,7 +207,8 @@ class ConfigGenerator:
                 success=True,
                 webhook_type=webhook_type,
                 config_line=config_line,
-                preview_message=preview_message
+                preview_message=preview_message,
+                error_message=None
             )
             
         except Exception as e:
@@ -234,7 +267,6 @@ class ConfigManager:
             return {}
             
         except Exception as e:
-            print(f"Error loading configs: {e}")
             return {}
     
     def save_config(
@@ -259,12 +291,15 @@ class ConfigManager:
             
             # Create backup if requested
             if create_backup and self.config_file_path.exists():
-                backup_file = self._create_backup()
+                try:
+                    backup_file = self._create_backup()
+                except Exception as e:
+                    # Continue without backup
+                    pass
             
             # Load current config
             from configparser import ConfigParser
             config = ConfigParser()
-            
             if self.config_file_path.exists():
                 config.read(str(self.config_file_path))
             
@@ -275,9 +310,12 @@ class ConfigManager:
             # Update the specific webhook type
             config['webhooks'][webhook_type] = config_line
             
-            # Write back to file
-            with open(self.config_file_path, 'w') as f:
-                config.write(f)
+            # Write back to file with explicit error handling
+            try:
+                with open(self.config_file_path, 'w') as f:
+                    config.write(f)
+            except Exception as write_error:
+                return False, backup_file, f"Failed to write config file: {str(write_error)}"
             
             return True, backup_file, None
             
@@ -286,16 +324,19 @@ class ConfigManager:
     
     def _create_backup(self) -> str:
         """Create a backup of the current config file."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_filename = f"webhook-config_{timestamp}.ini.bak"
-        
-        # Ensure backup directory exists
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
-        
-        backup_path = self.backup_dir / backup_filename
-        shutil.copy2(self.config_file_path, backup_path)
-        
-        return str(backup_path)
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_filename = f"webhook-config_{timestamp}.ini.bak"
+            
+            # Ensure backup directory exists
+            self.backup_dir.mkdir(parents=True, exist_ok=True)
+            
+            backup_path = self.backup_dir / backup_filename
+            shutil.copy2(self.config_file_path, backup_path)
+            
+            return str(backup_path)
+        except Exception as e:
+            raise
     
     def restart_service(self) -> Tuple[bool, Optional[str]]:
         """

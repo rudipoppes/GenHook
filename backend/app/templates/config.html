@@ -196,11 +196,30 @@
                         </div>
                     </div>
                     
+                    <!-- Test Payload for Edit Mode -->
+                    <div id="editModeTestPayload" class="d-none mb-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-vial me-2"></i>Test Payload (Edit Mode)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <small class="text-muted">Provide a sample JSON payload to test your template changes:</small>
+                                </div>
+                                <textarea class="form-control font-monospace" id="editTestPayload" rows="4" 
+                                          placeholder="Paste a sample JSON payload here to test your configuration..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="d-flex justify-content-between mt-3">
                         <button type="button" class="btn btn-secondary" onclick="showStep(2)">
                             <i class="fas fa-arrow-left me-1"></i>Back
                         </button>
                         <div>
+                            <button type="button" class="btn btn-outline-info me-2" onclick="toggleEditTestPayload()" id="toggleTestPayloadBtn" style="display: none;">
+                                <i class="fas fa-vial me-1"></i>Add Test Payload
+                            </button>
                             <button type="button" class="btn btn-outline-primary me-2" onclick="testConfiguration()">
                                 <i class="fas fa-play me-1"></i>Test Config
                             </button>
@@ -280,6 +299,38 @@ function showStep(step) {
     document.querySelectorAll('.configuration-step').forEach(s => s.classList.add('d-none'));
     document.getElementById(`step${step}`).classList.remove('d-none');
     currentStep = step;
+}
+
+// Reset wizard to initial state
+function resetWizard() {
+    // Reset global state
+    analyzedPayload = null;
+    selectedFieldsList = [];
+    currentWebhookType = '';
+    
+    // Clear all form fields
+    document.getElementById('webhookType').value = '';
+    document.getElementById('jsonPayload').value = '';
+    document.getElementById('messageTemplate').value = '';
+    
+    // Clear field tree and selections
+    document.getElementById('fieldsTree').innerHTML = '';
+    document.getElementById('selectedFields').innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
+    document.getElementById('generatedPattern').textContent = 'field1,field2,nested{subfield}';
+    document.getElementById('availableVariables').innerHTML = '';
+    document.getElementById('messagePreview').innerHTML = '<em class="text-muted">Preview will appear here...</em>';
+    
+    // Reset button states
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('nextToTemplateBtn').disabled = true;
+    document.getElementById('saveConfigBtn').disabled = true;
+    
+    // Hide edit mode elements
+    document.getElementById('toggleTestPayloadBtn').style.display = 'none';
+    document.getElementById('editModeTestPayload').classList.add('d-none');
+    
+    // Go back to step 1
+    showStep(1);
 }
 
 // JSON validation
@@ -368,8 +419,11 @@ async function analyzePayload() {
     }
     
     try {
-        const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        modal.show();
+        // Show loading state on the button instead of modal
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const originalText = analyzeBtn.textContent;
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
         
         const response = await fetch('/api/analyze-payload', {
             method: 'POST',
@@ -383,10 +437,15 @@ async function analyzePayload() {
         });
         
         const result = await response.json();
-        modal.hide();
+        
+        // Restore button
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = originalText;
         
         if (result.success) {
             analyzedPayload = result;
+            // Store original payload for testing
+            analyzedPayload.original_payload = JSON.parse(payload);
             currentWebhookType = webhookType;
             displayFields(result.fields);
             showStep(2);
@@ -396,8 +455,12 @@ async function analyzePayload() {
         }
         
     } catch (error) {
-        document.querySelector('#loadingModal').style.display = 'none';
+        // Restore button on error
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze Payload';
         showNotification('Network Error', 'Failed to analyze payload', 'error');
+        console.error('Analysis error:', error);
     }
 }
 
@@ -502,46 +565,116 @@ function updatePreview() {
     document.getElementById('saveConfigBtn').disabled = !template.trim();
 }
 
+// Toggle edit mode test payload
+function toggleEditTestPayload() {
+    const payloadDiv = document.getElementById('editModeTestPayload');
+    const toggleBtn = document.getElementById('toggleTestPayloadBtn');
+    
+    if (payloadDiv.classList.contains('d-none')) {
+        payloadDiv.classList.remove('d-none');
+        toggleBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hide Test Payload';
+    } else {
+        payloadDiv.classList.add('d-none');
+        toggleBtn.innerHTML = '<i class="fas fa-vial me-1"></i>Add Test Payload';
+    }
+}
+
 // Test configuration
 async function testConfiguration() {
-    const template = document.getElementById('messageTemplate').value.trim();
-    if (!template) {
-        showNotification('Validation Error', 'Please enter a message template', 'error');
+    // Check if we have a webhook type
+    if (!currentWebhookType) {
+        showNotification('Test Error', 'Please complete the analysis step first', 'error');
         return;
     }
     
+    // Check if we have a test payload (either from analysis or edit mode)
+    let testPayload = null;
+    
+    if (analyzedPayload && analyzedPayload.original_payload && Object.keys(analyzedPayload.original_payload).length > 0) {
+        // Use original payload from analysis
+        testPayload = analyzedPayload.original_payload;
+    } else {
+        // Check for edit mode test payload
+        const editTestPayloadText = document.getElementById('editTestPayload').value.trim();
+        if (editTestPayloadText) {
+            try {
+                testPayload = JSON.parse(editTestPayloadText);
+            } catch (e) {
+                showNotification('Test Error', 'Invalid JSON in test payload: ' + e.message, 'error');
+                return;
+            }
+        } else {
+            showNotification('Test Error', 'No test payload available. Please provide a sample JSON payload using the "Add Test Payload" button.', 'warning');
+            return;
+        }
+    }
+    
+    // Test with current form data - no need to save first!
+    
     try {
-        const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        modal.show();
+        // Show loading state on button
+        const testBtn = document.querySelector('button[onclick*="testConfiguration"]') || document.getElementById('testConfigBtn');
+        const originalText = testBtn.textContent;
+        testBtn.disabled = true;
+        testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing...';
         
-        const response = await fetch('/api/generate-config', {
+        // Get current form data for testing BEFORE saving
+        const template = document.getElementById('messageTemplate').value.trim();
+        if (!template) {
+            showNotification('Test Error', 'Please enter a message template before testing', 'error');
+            return;
+        }
+        
+        const response = await fetch('/api/test-config', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 webhook_type: currentWebhookType,
+                test_payload: testPayload,
                 selected_fields: selectedFieldsList,
                 message_template: template
             })
         });
         
         const result = await response.json();
-        modal.hide();
+        
+        // Restore button
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
         
         if (result.success) {
             document.getElementById('messagePreview').innerHTML = `
-                <strong>Generated Message:</strong><br>
-                <span class="text-success">${result.preview_message}</span>
+                <div class="alert alert-success">
+                    <strong>✅ Test Successful!</strong><br>
+                    <strong>Generated Message:</strong><br>
+                    <code>${result.generated_message}</code><br><br>
+                    <strong>Extracted Fields:</strong><br>
+                    <small>${JSON.stringify(result.extracted_fields, null, 2)}</small><br><br>
+                    <strong>Processing Time:</strong> ${result.processing_time_ms.toFixed(2)}ms
+                </div>
             `;
-            showNotification('Test Successful', 'Configuration tested successfully', 'success');
+            showNotification('Test Successful', 'Configuration works! Check the preview above.', 'success');
         } else {
+            document.getElementById('messagePreview').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>❌ Test Failed:</strong><br>
+                    ${result.error_message || 'Unknown error'}
+                </div>
+            `;
             showNotification('Test Failed', result.error_message || 'Unknown error', 'error');
         }
         
     } catch (error) {
-        document.querySelector('#loadingModal').style.display = 'none';
+        // Restore button on error
+        const testBtn = document.querySelector('button[onclick*="testConfiguration"]') || document.getElementById('testConfigBtn');
+        if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test Config';
+        }
         showNotification('Network Error', 'Failed to test configuration', 'error');
+        console.error('Test error:', error);
     }
 }
 
@@ -554,8 +687,11 @@ async function saveConfiguration() {
     }
     
     try {
-        const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        modal.show();
+        // Show loading state on button instead of modal to avoid hanging issues
+        const saveBtn = document.getElementById('saveConfigBtn');
+        const originalText = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
         
         const configLine = selectedFieldsList.join(',') + '::' + template;
         
@@ -567,30 +703,38 @@ async function saveConfiguration() {
             body: JSON.stringify({
                 webhook_type: currentWebhookType,
                 config_line: configLine,
-                create_backup: true,
-                restart_service: true
+                create_backup: {{ config.backup_configs | tojson }},
+                restart_service: {{ config.auto_restart_service | tojson }}
             })
         });
         
         const result = await response.json();
-        modal.hide();
+        
+        // Restore button
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
         
         if (result.success) {
             showNotification('Configuration Saved', 
                 `Webhook '${currentWebhookType}' configured successfully${result.service_restarted ? ' and service restarted' : ''}`, 
                 'success');
             
-            // Reset form and reload page after delay
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
+            // Refresh the current configurations list to show the update
+            await refreshCurrentConfigurations();
+            
+            // Reset wizard to initial state
+            resetWizard();
         } else {
             showNotification('Save Failed', result.error_message || 'Unknown error', 'error');
         }
         
     } catch (error) {
-        document.querySelector('#loadingModal').style.display = 'none';
+        // Restore button on error
+        const saveBtn = document.getElementById('saveConfigBtn');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Configuration';
         showNotification('Network Error', 'Failed to save configuration', 'error');
+        console.error('Save error:', error);
     }
 }
 
@@ -601,18 +745,112 @@ async function editConfig(webhookType) {
         const result = await response.json();
         
         if (response.ok) {
-            // Populate form with existing config
+            // Reset wizard first
+            resetWizard();
+            
+            // Set the webhook type
             document.getElementById('webhookType').value = webhookType;
+            currentWebhookType = webhookType;
+            
+            // Set the message template
             document.getElementById('messageTemplate').value = result.message_template;
             
-            // You would need to reconstruct the payload analysis here
-            // For now, just show a message
-            showNotification('Edit Mode', 'Editing existing configurations is not fully implemented yet', 'warning');
+            // Mock field selection state for editing
+            selectedFieldsList = result.fields;
+            
+            // Create mock field info for the selected fields
+            const mockFields = result.fields.map(field => ({
+                pattern: field,
+                path: field.replace(/\{/g, '.').replace(/\}/g, ''),
+                field_type: 'string',
+                sample_value: 'sample_value',
+                is_array: false
+            }));
+            
+            // Create mock analyzed payload for editing
+            analyzedPayload = {
+                success: true,
+                webhook_type: webhookType,
+                total_fields: mockFields.length,
+                fields: mockFields,
+                original_payload: {} // Empty for edit mode
+            };
+            
+            // Display the fields
+            displayFields(mockFields);
+            
+            // Select all the fields that were in the configuration
+            selectedFieldsList.forEach(field => {
+                const checkbox = document.querySelector(`input[value="${field}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Update the selected fields display
+            updateSelectedFields();
+            
+            // Go directly to step 3 (template editing)
+            showStep(3);
+            updateAvailableVariables();
+            updatePreview();
+            
+            // Show the "Add Test Payload" button in edit mode
+            document.getElementById('toggleTestPayloadBtn').style.display = 'inline-block';
+            
+            showNotification('Edit Mode', `Editing configuration for '${webhookType}'. Use "Add Test Payload" to test your changes.`, 'info');
         } else {
             showNotification('Load Error', 'Failed to load configuration', 'error');
         }
     } catch (error) {
         showNotification('Network Error', 'Failed to load configuration', 'error');
+    }
+}
+
+// Refresh current configurations list
+async function refreshCurrentConfigurations() {
+    try {
+        const response = await fetch('/api/configs');
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update the configurations table
+            const tbody = document.querySelector('.table tbody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                
+                Object.entries(result.configurations).forEach(([webhookType, configLine]) => {
+                    const [fields, template] = configLine.split('::', 2);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><code>${webhookType}</code></td>
+                        <td class="small text-muted">
+                            ${fields.length > 50 ? fields.substring(0, 50) + '...' : fields}
+                        </td>
+                        <td class="small">
+                            ${template.length > 60 ? template.substring(0, 60) + '...' : template}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${webhookType}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('${webhookType}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Update the count badge
+                const badge = document.querySelector('.badge.bg-success');
+                if (badge) {
+                    badge.textContent = `${result.total_count} Configured`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to refresh configurations:', error);
     }
 }
 
@@ -631,9 +869,8 @@ async function deleteConfig(webhookType) {
         
         if (response.ok) {
             showNotification('Configuration Deleted', `Webhook '${webhookType}' deleted successfully`, 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            // Refresh the current configurations list to show the update
+            await refreshCurrentConfigurations();
         } else {
             showNotification('Delete Error', result.detail || 'Unknown error', 'error');
         }

@@ -61,7 +61,7 @@ def load_web_config(config_path: Optional[str] = None) -> WebConfig:
     if config_path is None:
         # Default path relative to backend directory
         backend_dir = Path(__file__).parent.parent.parent
-        config_path = backend_dir / "config" / "web-config.ini"
+        config_path = str(backend_dir / "config" / "web-config.ini")
     
     config = ConfigParser()
     

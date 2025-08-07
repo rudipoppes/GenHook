@@ -35,7 +35,7 @@ if web_config.enabled:
         web_routes_module.templates = templates
         
         # Include web router
-        app.include_router(web_routes)
+        app.include_router(web_router)
         logger.info("✅ Web interface enabled and configured")
     else:
         logger.warning("⚠️ Templates directory not found, web interface disabled")
