@@ -1,379 +1,339 @@
-{% extends "base.html" %}
-
-{% block title %}Webhook Configuration - GenHook{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-webhook text-primary me-2"></i>Webhook Configuration</h1>
-            <div class="badge bg-success fs-6">{{ total_configs }} Configured</div>
-        </div>
-    </div>
-</div>
-
-<!-- Current Configurations Overview -->
-{% if current_configs %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Current Configurations</h5>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Configuration - GenHook</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/config">
+                <i class="fas fa-webhook me-2"></i>GenHook Configuration
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/health" target="_blank">
+                    <i class="fas fa-heart-pulse me-1"></i>Health
+                </a>
+                <a class="nav-link" href="/docs" target="_blank">
+                    <i class="fas fa-book me-1"></i>API Docs
+                </a>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Webhook Type</th>
-                                <th>Fields</th>
-                                <th>Template Preview</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for webhook_type, config_line in current_configs.items() %}
-                            <tr>
-                                <td><code>{{ webhook_type }}</code></td>
-                                <td class="small text-muted">
-                                    {{ config_line.split('::')[0][:50] }}{% if config_line.split('::')[0]|length > 50 %}...{% endif %}
-                                </td>
-                                <td class="small">
-                                    {{ config_line.split('::')[1][:60] }}{% if config_line.split('::')[1]|length > 60 %}...{% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="editConfig('{{ webhook_type }}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('{{ webhook_type }}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-webhook text-primary me-2"></i>Webhook Configuration</h1>
+                    <div class="badge bg-success fs-6" id="configCount">{{ total_configs }} Configured</div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% endif %}
 
-<!-- Configuration Wizard -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-magic me-2"></i>Create New Configuration</h5>
+        <!-- Current Configurations Overview -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Current Configurations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Webhook Type</th>
+                                        <th>Fields</th>
+                                        <th>Template Preview</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="configurationsTable">
+                                    {% for webhook_type, config_line in current_configs.items() %}
+                                    {% set fields, template = config_line.split('::', 1) %}
+                                    <tr>
+                                        <td><code>{{ webhook_type }}</code></td>
+                                        <td class="small text-muted">{{ fields[:50] + ('...' if fields|length > 50 else '') }}</td>
+                                        <td class="small">{{ template[:60] + ('...' if template|length > 60 else '') }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editConfig('{{ webhook_type }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('{{ webhook_type }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <!-- Step 1: JSON Payload Input -->
-                <div id="step1" class="configuration-step">
-                    <h6 class="text-primary mb-3"><i class="fas fa-file-code me-2"></i>Step 1: Provide Sample Payload</h6>
-                    <div class="row">
-                        <div class="col-md-6">
+        </div>
+
+        <!-- Configuration Wizard -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-magic me-2"></i>Create New Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Step 1: JSON Payload Input -->
+                        <div id="step1" class="configuration-step">
+                            <h6 class="text-primary mb-3"><i class="fas fa-file-code me-2"></i>Step 1: Provide Sample Payload</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="webhookType" class="form-label">Webhook Type Name</label>
+                                        <input type="text" class="form-control" id="webhookType" placeholder="e.g., github, stripe, slack">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Quick Templates</label>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSample('github')">GitHub</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSample('stripe')">Stripe</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSample('slack')">Slack</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
-                                <label for="webhookType" class="form-label">Webhook Type Name</label>
-                                <input type="text" class="form-control" id="webhookType" placeholder="e.g., github, stripe, slack">
-                                <div class="form-text">Enter a unique name for this webhook type</div>
+                                <label for="jsonPayload" class="form-label">JSON Payload</label>
+                                <textarea class="form-control font-monospace" id="jsonPayload" rows="10" 
+                                          placeholder="Paste your JSON webhook payload here..."></textarea>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-primary" onclick="validateJson()">
+                                    <i class="fas fa-check-circle me-1"></i>Validate JSON
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="analyzePayload()" disabled id="analyzeBtn">
+                                    <i class="fas fa-search me-1"></i>Analyze Payload
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-6">
+
+                        <!-- Step 2: Field Selection -->
+                        <div id="step2" class="configuration-step d-none">
+                            <h6 class="text-primary mb-3"><i class="fas fa-tasks me-2"></i>Step 2: Select Fields</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Available Fields</h6>
+                                        </div>
+                                        <div class="card-body" style="max-height: 400px; overflow-y: auto;" id="fieldsTree">
+                                            <!-- Fields will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Selected Fields</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="selectedFields">
+                                                <p class="text-muted"><i>No fields selected</i></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button type="button" class="btn btn-secondary" onclick="showStep(1)">
+                                    <i class="fas fa-arrow-left me-1"></i>Back
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="showStep(3)" disabled id="nextToTemplateBtn">
+                                    <i class="fas fa-arrow-right me-1"></i>Create Template
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Template Building -->
+                        <div id="step3" class="configuration-step d-none">
+                            <h6 class="text-primary mb-3"><i class="fas fa-edit me-2"></i>Step 3: Build Message Template</h6>
+                            
                             <div class="mb-3">
-                                <label class="form-label">Quick Templates</label>
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSamplePayload('github')">GitHub</button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSamplePayload('stripe')">Stripe</button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSamplePayload('slack')">Slack</button>
-                                </div>
+                                <label for="messageTemplate" class="form-label">Message Template</label>
+                                <textarea class="form-control" id="messageTemplate" rows="3" 
+                                          placeholder="Create your message template using field variables..."></textarea>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="jsonPayload" class="form-label">JSON Payload</label>
-                        <textarea class="form-control font-monospace" id="jsonPayload" rows="10" 
-                                  placeholder="Paste your JSON webhook payload here..."></textarea>
-                        <div class="form-text">Paste a sample JSON payload from your webhook source</div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <button type="button" class="btn btn-outline-primary" onclick="validateJson()">
-                                <i class="fas fa-check-circle me-1"></i>Validate JSON
-                            </button>
-                        </div>
-                        <button type="button" class="btn btn-primary" onclick="analyzePayload()" disabled id="analyzeBtn">
-                            <i class="fas fa-search me-1"></i>Analyze Payload
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Step 2: Field Selection -->
-                <div id="step2" class="configuration-step d-none">
-                    <h6 class="text-primary mb-3"><i class="fas fa-tasks me-2"></i>Step 2: Select Fields</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Available Fields</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Available Variables</h6>
+                                        </div>
+                                        <div class="card-body" style="max-height: 200px; overflow-y: auto;" id="availableVariables">
+                                            <!-- Variables will be populated here -->
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                                    <div id="fieldsTree">
-                                        <!-- Fields will be populated here -->
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Live Preview</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="messagePreview" class="border rounded p-2 bg-light">
+                                                <em class="text-muted">Preview will appear here...</em>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Selected Fields</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="selectedFields">
-                                        <p class="text-muted"><i>No fields selected</i></p>
+                            
+                            <!-- Test Payload for Edit Mode -->
+                            <div id="editModeTestPayload" class="d-none mb-3 mt-3">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="fas fa-vial me-2"></i>Test Payload (Edit Mode)</h6>
                                     </div>
-                                    <div class="mt-3">
-                                        <small class="text-muted">
-                                            <strong>Generated Pattern:</strong><br>
-                                            <code id="generatedPattern" class="text-primary">field1,field2,nested{subfield}</code>
-                                        </small>
+                                    <div class="card-body">
+                                        <textarea class="form-control font-monospace" id="editTestPayload" rows="4" 
+                                                  placeholder="Paste a sample JSON payload here to test your configuration..."></textarea>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-3">
-                        <button type="button" class="btn btn-secondary" onclick="showStep(1)">
-                            <i class="fas fa-arrow-left me-1"></i>Back
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="showStep(3)" disabled id="nextToTemplateBtn">
-                            <i class="fas fa-arrow-right me-1"></i>Create Template
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Step 3: Template Building -->
-                <div id="step3" class="configuration-step d-none">
-                    <h6 class="text-primary mb-3"><i class="fas fa-edit me-2"></i>Step 3: Build Message Template</h6>
-                    
-                    <div class="mb-3">
-                        <label for="messageTemplate" class="form-label">Message Template</label>
-                        <textarea class="form-control" id="messageTemplate" rows="3" 
-                                  placeholder="Create your message template using selected field variables..."></textarea>
-                        <div class="form-text">
-                            Use variables like <code>$field_name$</code> or <code>$object.subfield$</code>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Available Variables</h6>
-                                </div>
-                                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
-                                    <div id="availableVariables">
-                                        <!-- Variables will be populated here -->
-                                    </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <button type="button" class="btn btn-secondary" onclick="showStep(2)">
+                                    <i class="fas fa-arrow-left me-1"></i>Back
+                                </button>
+                                <div>
+                                    <button type="button" class="btn btn-outline-info me-2" onclick="toggleEditTestPayload()" id="toggleTestPayloadBtn" style="display: none;">
+                                        <i class="fas fa-vial me-1"></i>Add Test Payload
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary me-2" onclick="testConfiguration()">
+                                        <i class="fas fa-play me-1"></i>Test Config
+                                    </button>
+                                    <button type="button" class="btn btn-success" onclick="saveConfiguration()" disabled id="saveConfigBtn">
+                                        <i class="fas fa-save me-1"></i>Save Configuration
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Live Preview</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="messagePreview" class="border rounded p-2 bg-light">
-                                        <em class="text-muted">Preview will appear here...</em>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Test Payload for Edit Mode -->
-                    <div id="editModeTestPayload" class="d-none mb-3">
-                        <div class="card border-info">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="fas fa-vial me-2"></i>Test Payload (Edit Mode)</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-2">
-                                    <small class="text-muted">Provide a sample JSON payload to test your template changes:</small>
-                                </div>
-                                <textarea class="form-control font-monospace" id="editTestPayload" rows="4" 
-                                          placeholder="Paste a sample JSON payload here to test your configuration..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-3">
-                        <button type="button" class="btn btn-secondary" onclick="showStep(2)">
-                            <i class="fas fa-arrow-left me-1"></i>Back
-                        </button>
-                        <div>
-                            <button type="button" class="btn btn-outline-info me-2" onclick="toggleEditTestPayload()" id="toggleTestPayloadBtn" style="display: none;">
-                                <i class="fas fa-vial me-1"></i>Add Test Payload
-                            </button>
-                            <button type="button" class="btn btn-outline-primary me-2" onclick="testConfiguration()">
-                                <i class="fas fa-play me-1"></i>Test Config
-                            </button>
-                            <button type="button" class="btn btn-success" onclick="saveConfiguration()" disabled id="saveConfigBtn">
-                                <i class="fas fa-save me-1"></i>Save Configuration
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <div class="spinner-border text-primary" role="status"></div>
-                <div class="mt-3">Processing...</div>
+        <!-- Toast for notifications -->
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+            <div id="notificationToast" class="toast" role="alert">
+                <div class="toast-header">
+                    <strong class="me-auto" id="toastTitle">Notification</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body" id="toastMessage"></div>
             </div>
         </div>
-    </div>
-</div>
+    </main>
 
-<!-- Success/Error Toast -->
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-    <div id="notificationToast" class="toast" role="alert">
-        <div class="toast-header">
-            <strong class="me-auto" id="toastTitle">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    <!-- Footer -->
+    <footer class="bg-light py-3 mt-5">
+        <div class="container text-center text-muted">
+            <small>GenHook v1.0 - Configuration-driven Webhook Processing</small>
         </div>
-        <div class="toast-body" id="toastMessage">
-            <!-- Message content -->
-        </div>
-    </div>
-</div>
-{% endblock %}
+    </footer>
 
-{% block scripts %}
-<script>
-// Configuration state
-let currentStep = 1;
-let analyzedPayload = null;
-let selectedFieldsList = [];
-let currentWebhookType = '';
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global state
+        let currentStep = 1;
+        let analyzedPayload = null;
+        let selectedFieldsList = [];
+        let currentWebhookType = '';
 
-// Show notification toast
-function showNotification(title, message, type = 'info') {
-    const toast = document.getElementById('notificationToast');
-    const toastTitle = document.getElementById('toastTitle');
-    const toastMessage = document.getElementById('toastMessage');
-    const toastHeader = toast.querySelector('.toast-header');
-    
-    // Set content
-    toastTitle.textContent = title;
-    toastMessage.textContent = message;
-    
-    // Set color based on type
-    toastHeader.className = 'toast-header';
-    if (type === 'success') {
-        toastHeader.classList.add('bg-success', 'text-white');
-    } else if (type === 'error') {
-        toastHeader.classList.add('bg-danger', 'text-white');
-    } else if (type === 'warning') {
-        toastHeader.classList.add('bg-warning');
-    }
-    
-    // Show toast
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-}
+        // Load configurations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfigurations();
+        });
 
-// Step navigation
-function showStep(step) {
-    document.querySelectorAll('.configuration-step').forEach(s => s.classList.add('d-none'));
-    document.getElementById(`step${step}`).classList.remove('d-none');
-    currentStep = step;
-}
+        function showNotification(title, message, type = 'info') {
+            const toast = document.getElementById('notificationToast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastHeader = toast.querySelector('.toast-header');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            toastHeader.className = 'toast-header';
+            if (type === 'success') {
+                toastHeader.classList.add('bg-success', 'text-white');
+            } else if (type === 'error') {
+                toastHeader.classList.add('bg-danger', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
 
-// Reset wizard to initial state
-function resetWizard() {
-    // Reset global state
-    analyzedPayload = null;
-    selectedFieldsList = [];
-    currentWebhookType = '';
-    
-    // Clear all form fields
-    document.getElementById('webhookType').value = '';
-    document.getElementById('jsonPayload').value = '';
-    document.getElementById('messageTemplate').value = '';
-    
-    // Clear field tree and selections
-    document.getElementById('fieldsTree').innerHTML = '';
-    document.getElementById('selectedFields').innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
-    document.getElementById('generatedPattern').textContent = 'field1,field2,nested{subfield}';
-    document.getElementById('availableVariables').innerHTML = '';
-    document.getElementById('messagePreview').innerHTML = '<em class="text-muted">Preview will appear here...</em>';
-    
-    // Reset button states
-    document.getElementById('analyzeBtn').disabled = true;
-    document.getElementById('nextToTemplateBtn').disabled = true;
-    document.getElementById('saveConfigBtn').disabled = true;
-    
-    // Hide edit mode elements
-    document.getElementById('toggleTestPayloadBtn').style.display = 'none';
-    document.getElementById('editModeTestPayload').classList.add('d-none');
-    
-    // Go back to step 1
-    showStep(1);
-}
+        function showStep(step) {
+            document.querySelectorAll('.configuration-step').forEach(s => s.classList.add('d-none'));
+            document.getElementById(`step${step}`).classList.remove('d-none');
+            currentStep = step;
+            
+            if (step === 3) {
+                updateAvailableVariables();
+            }
+        }
 
-// JSON validation
-function validateJson() {
-    const payload = document.getElementById('jsonPayload').value.trim();
-    if (!payload) {
-        showNotification('Validation Error', 'Please enter a JSON payload', 'error');
-        return false;
-    }
-    
-    try {
-        JSON.parse(payload);
-        showNotification('Validation Success', 'JSON is valid', 'success');
-        document.getElementById('analyzeBtn').disabled = false;
-        return true;
-    } catch (e) {
-        showNotification('Validation Error', `Invalid JSON: ${e.message}`, 'error');
-        document.getElementById('analyzeBtn').disabled = true;
-        return false;
-    }
-}
+        function validateJson() {
+            const payload = document.getElementById('jsonPayload').value.trim();
+            if (!payload) {
+                showNotification('Error', 'Please enter a JSON payload', 'error');
+                return false;
+            }
+            
+            try {
+                JSON.parse(payload);
+                showNotification('Success', 'JSON is valid', 'success');
+                document.getElementById('analyzeBtn').disabled = false;
+                return true;
+            } catch (e) {
+                showNotification('Error', `Invalid JSON: ${e.message}`, 'error');
+                return false;
+            }
+        }
 
-// Load sample payloads
-function loadSamplePayload(type) {
-    const samples = {
-        github: {
-            type: 'github',
-            payload: `{
+        function loadSample(type) {
+            const samples = {
+                github: {
+                    type: 'github',
+                    payload: `{
   "action": "opened",
   "pull_request": {
     "title": "Add new feature",
-    "user": {
-      "login": "developer"
-    }
+    "user": {"login": "developer"}
   },
-  "repository": {
-    "name": "my-repo"
-  }
+  "repository": {"name": "my-repo"}
 }`
-        },
-        stripe: {
-            type: 'stripe',
-            payload: `{
+                },
+                stripe: {
+                    type: 'stripe', 
+                    payload: `{
   "type": "payment_intent.succeeded",
   "data": {
     "object": {
@@ -383,520 +343,368 @@ function loadSamplePayload(type) {
     }
   }
 }`
-        },
-        slack: {
-            type: 'slack',
-            payload: `{
+                },
+                slack: {
+                    type: 'slack',
+                    payload: `{
   "event": {
     "type": "message",
     "user": "U1234567",
     "text": "Hello world"
   }
 }`
-        }
-    };
-    
-    const sample = samples[type];
-    if (sample) {
-        document.getElementById('webhookType').value = sample.type;
-        document.getElementById('jsonPayload').value = sample.payload;
-        validateJson();
-    }
-}
-
-// Analyze payload
-async function analyzePayload() {
-    const webhookType = document.getElementById('webhookType').value.trim();
-    const payload = document.getElementById('jsonPayload').value.trim();
-    
-    if (!webhookType) {
-        showNotification('Validation Error', 'Please enter a webhook type name', 'error');
-        return;
-    }
-    
-    if (!validateJson()) {
-        return;
-    }
-    
-    try {
-        // Show loading state on the button instead of modal
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const originalText = analyzeBtn.textContent;
-        analyzeBtn.disabled = true;
-        analyzeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
-        
-        const response = await fetch('/api/analyze-payload', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                payload: JSON.parse(payload),
-                webhook_type: webhookType
-            })
-        });
-        
-        const result = await response.json();
-        
-        // Restore button
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = originalText;
-        
-        if (result.success) {
-            analyzedPayload = result;
-            // Store original payload for testing
-            analyzedPayload.original_payload = JSON.parse(payload);
-            currentWebhookType = webhookType;
-            displayFields(result.fields);
-            showStep(2);
-            showNotification('Analysis Complete', `Found ${result.total_fields} extractable fields`, 'success');
-        } else {
-            showNotification('Analysis Failed', result.error_message || 'Unknown error', 'error');
-        }
-        
-    } catch (error) {
-        // Restore button on error
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = 'Analyze Payload';
-        showNotification('Network Error', 'Failed to analyze payload', 'error');
-        console.error('Analysis error:', error);
-    }
-}
-
-// Display fields in tree format
-function displayFields(fields) {
-    const container = document.getElementById('fieldsTree');
-    container.innerHTML = '';
-    
-    fields.forEach(field => {
-        const div = document.createElement('div');
-        div.className = 'form-check mb-2';
-        div.innerHTML = `
-            <input class="form-check-input" type="checkbox" value="${field.pattern}" id="field_${field.path.replace(/\./g, '_')}">
-            <label class="form-check-label" for="field_${field.path.replace(/\./g, '_')}">
-                <code class="text-primary">${field.pattern}</code>
-                <small class="text-muted d-block">${field.field_type}${field.is_array ? ' (array)' : ''}</small>
-                ${field.sample_value !== null ? `<small class="text-secondary d-block">Sample: ${JSON.stringify(field.sample_value)}</small>` : ''}
-            </label>
-        `;
-        
-        const checkbox = div.querySelector('input');
-        checkbox.addEventListener('change', updateSelectedFields);
-        
-        container.appendChild(div);
-    });
-}
-
-// Update selected fields
-function updateSelectedFields() {
-    selectedFieldsList = [];
-    const checkboxes = document.querySelectorAll('#fieldsTree input:checked');
-    
-    checkboxes.forEach(cb => {
-        selectedFieldsList.push(cb.value);
-    });
-    
-    // Update display
-    const selectedContainer = document.getElementById('selectedFields');
-    if (selectedFieldsList.length === 0) {
-        selectedContainer.innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
-    } else {
-        selectedContainer.innerHTML = selectedFieldsList.map(field => 
-            `<span class="badge bg-primary me-1 mb-1">${field}</span>`
-        ).join('');
-    }
-    
-    // Update pattern
-    document.getElementById('generatedPattern').textContent = selectedFieldsList.join(',');
-    
-    // Enable/disable next button
-    document.getElementById('nextToTemplateBtn').disabled = selectedFieldsList.length === 0;
-    
-    // Update variables in step 3 if visible
-    if (currentStep === 3) {
-        updateAvailableVariables();
-    }
-}
-
-// Update available variables for template
-function updateAvailableVariables() {
-    const container = document.getElementById('availableVariables');
-    if (selectedFieldsList.length === 0) {
-        container.innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
-        return;
-    }
-    
-    // Convert patterns to variable names
-    const variables = selectedFieldsList.map(pattern => {
-        // Convert pattern like "user{name}" to variable like "user.name"
-        return pattern.replace(/\{([^}]+)\}/g, '.$1');
-    });
-    
-    container.innerHTML = variables.map(variable => 
-        `<div class="mb-1">
-            <code class="text-success cursor-pointer" onclick="insertVariable('${variable}')">$${variable}$</code>
-        </div>`
-    ).join('');
-}
-
-// Insert variable into template
-function insertVariable(variable) {
-    const textarea = document.getElementById('messageTemplate');
-    const cursorPos = textarea.selectionStart;
-    const textBefore = textarea.value.substring(0, cursorPos);
-    const textAfter = textarea.value.substring(textarea.selectionEnd);
-    
-    textarea.value = textBefore + `$${variable}$` + textAfter;
-    textarea.focus();
-    textarea.setSelectionRange(cursorPos + variable.length + 2, cursorPos + variable.length + 2);
-    
-    // Update preview
-    updatePreview();
-}
-
-// Update message preview
-function updatePreview() {
-    // This is a simplified preview - real preview happens on test
-    const template = document.getElementById('messageTemplate').value;
-    document.getElementById('messagePreview').textContent = template || 'Preview will appear here...';
-    
-    // Enable save button if template is not empty
-    document.getElementById('saveConfigBtn').disabled = !template.trim();
-}
-
-// Toggle edit mode test payload
-function toggleEditTestPayload() {
-    const payloadDiv = document.getElementById('editModeTestPayload');
-    const toggleBtn = document.getElementById('toggleTestPayloadBtn');
-    
-    if (payloadDiv.classList.contains('d-none')) {
-        payloadDiv.classList.remove('d-none');
-        toggleBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hide Test Payload';
-    } else {
-        payloadDiv.classList.add('d-none');
-        toggleBtn.innerHTML = '<i class="fas fa-vial me-1"></i>Add Test Payload';
-    }
-}
-
-// Test configuration
-async function testConfiguration() {
-    // Check if we have a webhook type
-    if (!currentWebhookType) {
-        showNotification('Test Error', 'Please complete the analysis step first', 'error');
-        return;
-    }
-    
-    // Check if we have a test payload (either from analysis or edit mode)
-    let testPayload = null;
-    
-    if (analyzedPayload && analyzedPayload.original_payload && Object.keys(analyzedPayload.original_payload).length > 0) {
-        // Use original payload from analysis
-        testPayload = analyzedPayload.original_payload;
-    } else {
-        // Check for edit mode test payload
-        const editTestPayloadText = document.getElementById('editTestPayload').value.trim();
-        if (editTestPayloadText) {
-            try {
-                testPayload = JSON.parse(editTestPayloadText);
-            } catch (e) {
-                showNotification('Test Error', 'Invalid JSON in test payload: ' + e.message, 'error');
-                return;
-            }
-        } else {
-            showNotification('Test Error', 'No test payload available. Please provide a sample JSON payload using the "Add Test Payload" button.', 'warning');
-            return;
-        }
-    }
-    
-    // Test with current form data - no need to save first!
-    
-    try {
-        // Show loading state on button
-        const testBtn = document.querySelector('button[onclick*="testConfiguration"]') || document.getElementById('testConfigBtn');
-        const originalText = testBtn.textContent;
-        testBtn.disabled = true;
-        testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing...';
-        
-        // Get current form data for testing BEFORE saving
-        const template = document.getElementById('messageTemplate').value.trim();
-        if (!template) {
-            showNotification('Test Error', 'Please enter a message template before testing', 'error');
-            return;
-        }
-        
-        const response = await fetch('/api/test-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                webhook_type: currentWebhookType,
-                test_payload: testPayload,
-                selected_fields: selectedFieldsList,
-                message_template: template
-            })
-        });
-        
-        const result = await response.json();
-        
-        // Restore button
-        testBtn.disabled = false;
-        testBtn.textContent = originalText;
-        
-        if (result.success) {
-            document.getElementById('messagePreview').innerHTML = `
-                <div class="alert alert-success">
-                    <strong>✅ Test Successful!</strong><br>
-                    <strong>Generated Message:</strong><br>
-                    <code>${result.generated_message}</code><br><br>
-                    <strong>Extracted Fields:</strong><br>
-                    <small>${JSON.stringify(result.extracted_fields, null, 2)}</small><br><br>
-                    <strong>Processing Time:</strong> ${result.processing_time_ms.toFixed(2)}ms
-                </div>
-            `;
-            showNotification('Test Successful', 'Configuration works! Check the preview above.', 'success');
-        } else {
-            document.getElementById('messagePreview').innerHTML = `
-                <div class="alert alert-danger">
-                    <strong>❌ Test Failed:</strong><br>
-                    ${result.error_message || 'Unknown error'}
-                </div>
-            `;
-            showNotification('Test Failed', result.error_message || 'Unknown error', 'error');
-        }
-        
-    } catch (error) {
-        // Restore button on error
-        const testBtn = document.querySelector('button[onclick*="testConfiguration"]') || document.getElementById('testConfigBtn');
-        if (testBtn) {
-            testBtn.disabled = false;
-            testBtn.textContent = 'Test Config';
-        }
-        showNotification('Network Error', 'Failed to test configuration', 'error');
-        console.error('Test error:', error);
-    }
-}
-
-// Save configuration
-async function saveConfiguration() {
-    const template = document.getElementById('messageTemplate').value.trim();
-    if (!template) {
-        showNotification('Validation Error', 'Please enter a message template', 'error');
-        return;
-    }
-    
-    try {
-        // Show loading state on button instead of modal to avoid hanging issues
-        const saveBtn = document.getElementById('saveConfigBtn');
-        const originalText = saveBtn.textContent;
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-        
-        const configLine = selectedFieldsList.join(',') + '::' + template;
-        
-        const response = await fetch('/api/save-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                webhook_type: currentWebhookType,
-                config_line: configLine,
-                create_backup: {{ config.backup_configs | tojson }},
-                restart_service: {{ config.auto_restart_service | tojson }}
-            })
-        });
-        
-        const result = await response.json();
-        
-        // Restore button
-        saveBtn.disabled = false;
-        saveBtn.textContent = originalText;
-        
-        if (result.success) {
-            showNotification('Configuration Saved', 
-                `Webhook '${currentWebhookType}' configured successfully${result.service_restarted ? ' and service restarted' : ''}`, 
-                'success');
-            
-            // Refresh the current configurations list to show the update
-            await refreshCurrentConfigurations();
-            
-            // Reset wizard to initial state
-            resetWizard();
-        } else {
-            showNotification('Save Failed', result.error_message || 'Unknown error', 'error');
-        }
-        
-    } catch (error) {
-        // Restore button on error
-        const saveBtn = document.getElementById('saveConfigBtn');
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Configuration';
-        showNotification('Network Error', 'Failed to save configuration', 'error');
-        console.error('Save error:', error);
-    }
-}
-
-// Edit existing configuration
-async function editConfig(webhookType) {
-    try {
-        const response = await fetch(`/api/config/${webhookType}`);
-        const result = await response.json();
-        
-        if (response.ok) {
-            // Reset wizard first
-            resetWizard();
-            
-            // Set the webhook type
-            document.getElementById('webhookType').value = webhookType;
-            currentWebhookType = webhookType;
-            
-            // Set the message template
-            document.getElementById('messageTemplate').value = result.message_template;
-            
-            // Mock field selection state for editing
-            selectedFieldsList = result.fields;
-            
-            // Create mock field info for the selected fields
-            const mockFields = result.fields.map(field => ({
-                pattern: field,
-                path: field.replace(/\{/g, '.').replace(/\}/g, ''),
-                field_type: 'string',
-                sample_value: 'sample_value',
-                is_array: false
-            }));
-            
-            // Create mock analyzed payload for editing
-            analyzedPayload = {
-                success: true,
-                webhook_type: webhookType,
-                total_fields: mockFields.length,
-                fields: mockFields,
-                original_payload: {} // Empty for edit mode
+                }
             };
             
-            // Display the fields
-            displayFields(mockFields);
-            
-            // Select all the fields that were in the configuration
-            selectedFieldsList.forEach(field => {
-                const checkbox = document.querySelector(`input[value="${field}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                }
-            });
-            
-            // Update the selected fields display
-            updateSelectedFields();
-            
-            // Go directly to step 3 (template editing)
-            showStep(3);
-            updateAvailableVariables();
-            updatePreview();
-            
-            // Show the "Add Test Payload" button in edit mode
-            document.getElementById('toggleTestPayloadBtn').style.display = 'inline-block';
-            
-            showNotification('Edit Mode', `Editing configuration for '${webhookType}'. Use "Add Test Payload" to test your changes.`, 'info');
-        } else {
-            showNotification('Load Error', 'Failed to load configuration', 'error');
-        }
-    } catch (error) {
-        showNotification('Network Error', 'Failed to load configuration', 'error');
-    }
-}
-
-// Refresh current configurations list
-async function refreshCurrentConfigurations() {
-    try {
-        const response = await fetch('/api/configs');
-        const result = await response.json();
-        
-        if (result.success) {
-            // Update the configurations table
-            const tbody = document.querySelector('.table tbody');
-            if (tbody) {
-                tbody.innerHTML = '';
-                
-                Object.entries(result.configurations).forEach(([webhookType, configLine]) => {
-                    const [fields, template] = configLine.split('::', 2);
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><code>${webhookType}</code></td>
-                        <td class="small text-muted">
-                            ${fields.length > 50 ? fields.substring(0, 50) + '...' : fields}
-                        </td>
-                        <td class="small">
-                            ${template.length > 60 ? template.substring(0, 60) + '...' : template}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${webhookType}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('${webhookType}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-                
-                // Update the count badge
-                const badge = document.querySelector('.badge.bg-success');
-                if (badge) {
-                    badge.textContent = `${result.total_count} Configured`;
-                }
+            const sample = samples[type];
+            if (sample) {
+                document.getElementById('webhookType').value = sample.type;
+                document.getElementById('jsonPayload').value = sample.payload;
+                validateJson();
             }
         }
-    } catch (error) {
-        console.error('Failed to refresh configurations:', error);
-    }
-}
 
-// Delete configuration
-async function deleteConfig(webhookType) {
-    if (!confirm(`Are you sure you want to delete the configuration for '${webhookType}'?`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/config/${webhookType}`, {
-            method: 'DELETE'
+        async function analyzePayload() {
+            const webhookType = document.getElementById('webhookType').value.trim();
+            const payload = document.getElementById('jsonPayload').value.trim();
+            
+            if (!webhookType || !validateJson()) return;
+            
+            try {
+                const response = await fetch('/api/analyze-payload', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        payload: JSON.parse(payload),
+                        webhook_type: webhookType
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    analyzedPayload = result;
+                    analyzedPayload.original_payload = JSON.parse(payload);
+                    currentWebhookType = webhookType;
+                    displayFields(result.fields);
+                    showStep(2);
+                    showNotification('Success', `Found ${result.total_fields} fields`, 'success');
+                } else {
+                    showNotification('Error', result.error_message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to analyze payload', 'error');
+            }
+        }
+
+        function displayFields(fields) {
+            const container = document.getElementById('fieldsTree');
+            container.innerHTML = '';
+            
+            fields.forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'form-check mb-2';
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${field.pattern}" 
+                           id="field_${field.path.replace(/\./g, '_')}" onchange="updateSelectedFields()">
+                    <label class="form-check-label" for="field_${field.path.replace(/\./g, '_')}">
+                        <code class="text-primary">${field.pattern}</code>
+                        <small class="text-muted d-block">${field.field_type}</small>
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateSelectedFields() {
+            selectedFieldsList = [];
+            const checkboxes = document.querySelectorAll('#fieldsTree input:checked');
+            
+            checkboxes.forEach(cb => selectedFieldsList.push(cb.value));
+            
+            const container = document.getElementById('selectedFields');
+            if (selectedFieldsList.length === 0) {
+                container.innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
+            } else {
+                container.innerHTML = selectedFieldsList.map(field => 
+                    `<span class="badge bg-primary me-1 mb-1">${field}</span>`
+                ).join('');
+            }
+            
+            document.getElementById('nextToTemplateBtn').disabled = selectedFieldsList.length === 0;
+        }
+
+        function updateAvailableVariables() {
+            const container = document.getElementById('availableVariables');
+            if (selectedFieldsList.length === 0) {
+                container.innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
+                return;
+            }
+            
+            const variables = selectedFieldsList.map(pattern => 
+                pattern.replace(/\{([^}]+)\}/g, '.$1')
+            );
+            
+            container.innerHTML = variables.map(variable => 
+                `<div class="mb-1">
+                    <code class="text-success cursor-pointer" onclick="insertVariable('${variable}')" 
+                          style="cursor: pointer;">$${variable}$</code>
+                </div>`
+            ).join('');
+        }
+
+        function insertVariable(variable) {
+            const textarea = document.getElementById('messageTemplate');
+            const pos = textarea.selectionStart;
+            const text = textarea.value;
+            textarea.value = text.substring(0, pos) + `$${variable}$` + text.substring(pos);
+            textarea.focus();
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const template = document.getElementById('messageTemplate').value;
+            document.getElementById('messagePreview').textContent = template || 'Preview will appear here...';
+            document.getElementById('saveConfigBtn').disabled = !template.trim();
+        }
+
+        function toggleEditTestPayload() {
+            const payloadDiv = document.getElementById('editModeTestPayload');
+            const toggleBtn = document.getElementById('toggleTestPayloadBtn');
+            
+            if (payloadDiv.classList.contains('d-none')) {
+                payloadDiv.classList.remove('d-none');
+                toggleBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hide Test Payload';
+            } else {
+                payloadDiv.classList.add('d-none');
+                toggleBtn.innerHTML = '<i class="fas fa-vial me-1"></i>Add Test Payload';
+            }
+        }
+
+        async function testConfiguration() {
+            const template = document.getElementById('messageTemplate').value.trim();
+            if (!template) {
+                showNotification('Error', 'Please enter a message template', 'error');
+                return;
+            }
+            
+            let testPayload = null;
+            if (analyzedPayload && analyzedPayload.original_payload) {
+                testPayload = analyzedPayload.original_payload;
+            } else {
+                const editPayload = document.getElementById('editTestPayload').value.trim();
+                if (editPayload) {
+                    try {
+                        testPayload = JSON.parse(editPayload);
+                    } catch (e) {
+                        showNotification('Error', 'Invalid JSON in test payload', 'error');
+                        return;
+                    }
+                } else {
+                    showNotification('Error', 'No test payload available', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/test-config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        webhook_type: currentWebhookType,
+                        test_payload: testPayload,
+                        selected_fields: selectedFieldsList,
+                        message_template: template
+                    })
+                });
+                
+                const result = await response.json();
+                const previewDiv = document.getElementById('messagePreview');
+                
+                if (result.success) {
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✅ Test Successful!</strong><br>
+                            <strong>Generated Message:</strong><br>
+                            <code>${result.generated_message}</code><br><br>
+                            <strong>Processing Time:</strong> ${result.processing_time_ms}ms
+                        </div>
+                    `;
+                    showNotification('Success', 'Configuration works!', 'success');
+                } else {
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>❌ Test Failed:</strong><br>
+                            ${result.error_message || 'Unknown error'}
+                        </div>
+                    `;
+                    showNotification('Error', result.error_message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to test configuration', 'error');
+            }
+        }
+
+        async function saveConfiguration() {
+            const template = document.getElementById('messageTemplate').value.trim();
+            if (!template) {
+                showNotification('Error', 'Please enter a message template', 'error');
+                return;
+            }
+            
+            try {
+                const configLine = selectedFieldsList.join(',') + '::' + template;
+                
+                const response = await fetch('/api/save-config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        webhook_type: currentWebhookType,
+                        config_line: configLine,
+                        create_backup: true,
+                        restart_service: false
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Success', `Webhook '${currentWebhookType}' saved successfully`, 'success');
+                    loadConfigurations();
+                    resetWizard();
+                } else {
+                    showNotification('Error', result.error_message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to save configuration', 'error');
+            }
+        }
+
+        function resetWizard() {
+            analyzedPayload = null;
+            selectedFieldsList = [];
+            currentWebhookType = '';
+            
+            document.getElementById('webhookType').value = '';
+            document.getElementById('jsonPayload').value = '';
+            document.getElementById('messageTemplate').value = '';
+            document.getElementById('fieldsTree').innerHTML = '';
+            document.getElementById('selectedFields').innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
+            document.getElementById('availableVariables').innerHTML = '';
+            document.getElementById('messagePreview').innerHTML = '<em class="text-muted">Preview will appear here...</em>';
+            
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('nextToTemplateBtn').disabled = true;
+            document.getElementById('saveConfigBtn').disabled = true;
+            document.getElementById('toggleTestPayloadBtn').style.display = 'none';
+            document.getElementById('editModeTestPayload').classList.add('d-none');
+            
+            showStep(1);
+        }
+
+        async function loadConfigurations() {
+            try {
+                const response = await fetch('/api/configs');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const tbody = document.getElementById('configurationsTable');
+                    tbody.innerHTML = '';
+                    
+                    Object.entries(result.configurations).forEach(([webhookType, configLine]) => {
+                        const [fields, template] = configLine.split('::', 2);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><code>${webhookType}</code></td>
+                            <td class="small text-muted">${fields.length > 50 ? fields.substring(0, 50) + '...' : fields}</td>
+                            <td class="small">${template.length > 60 ? template.substring(0, 60) + '...' : template}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${webhookType}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('${webhookType}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    document.getElementById('configCount').textContent = `${result.total_count} Configured`;
+                }
+            } catch (error) {
+                console.error('Failed to load configurations:', error);
+            }
+        }
+
+        async function editConfig(webhookType) {
+            try {
+                const response = await fetch(`/api/config/${webhookType}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resetWizard();
+                    
+                    document.getElementById('webhookType').value = webhookType;
+                    currentWebhookType = webhookType;
+                    document.getElementById('messageTemplate').value = result.message_template;
+                    selectedFieldsList = result.fields;
+                    
+                    const mockFields = result.fields.map(field => ({
+                        pattern: field,
+                        path: field.replace(/\{/g, '.').replace(/\}/g, ''),
+                        field_type: 'string'
+                    }));
+                    
+                    analyzedPayload = {
+                        success: true,
+                        fields: mockFields,
+                        original_payload: {}
+                    };
+                    
+                    displayFields(mockFields);
+                    selectedFieldsList.forEach(field => {
+                        const checkbox = document.querySelector(`input[value="${field}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                    updateSelectedFields();
+                    
+                    showStep(3);
+                    updateAvailableVariables();
+                    updatePreview();
+                    
+                    document.getElementById('toggleTestPayloadBtn').style.display = 'inline-block';
+                    showNotification('Edit Mode', `Editing configuration for '${webhookType}'`, 'info');
+                } else {
+                    showNotification('Error', 'Failed to load configuration', 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to load configuration', 'error');
+            }
+        }
+
+        async function deleteConfig(webhookType) {
+            if (!confirm(`Delete configuration for '${webhookType}'?`)) return;
+            
+            try {
+                const response = await fetch(`/api/config/${webhookType}`, {method: 'DELETE'});
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Success', `Webhook '${webhookType}' deleted`, 'success');
+                    loadConfigurations();
+                } else {
+                    showNotification('Error', result.detail || 'Delete failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to delete configuration', 'error');
+            }
+        }
+
+        // Auto-update preview
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('messageTemplate').addEventListener('input', updatePreview);
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            showNotification('Configuration Deleted', `Webhook '${webhookType}' deleted successfully`, 'success');
-            // Refresh the current configurations list to show the update
-            await refreshCurrentConfigurations();
-        } else {
-            showNotification('Delete Error', result.detail || 'Unknown error', 'error');
-        }
-    } catch (error) {
-        showNotification('Network Error', 'Failed to delete configuration', 'error');
-    }
-}
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-validate JSON on input
-    document.getElementById('jsonPayload').addEventListener('input', function() {
-        document.getElementById('analyzeBtn').disabled = true;
-    });
-    
-    // Auto-update preview on template change
-    document.getElementById('messageTemplate').addEventListener('input', updatePreview);
-    
-    // Show step 3 setup when entering
-    const originalShowStep = showStep;
-    showStep = function(step) {
-        originalShowStep(step);
-        if (step === 3) {
-            updateAvailableVariables();
-        }
-    };
-});
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
