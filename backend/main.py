@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 import logging
 import os
 from app.core.config import get_config, get_webhook_config
@@ -19,7 +19,7 @@ async def health_check():
     return {"status": "healthy"}
 
 @app.post("/webhook/{service}")
-async def receive_webhook(service: str, request: Request):
+async def receive_webhook(service: str, request: Request, response: Response):
     """
     Generic webhook endpoint that processes any configured webhook type
     """
@@ -29,9 +29,10 @@ async def receive_webhook(service: str, request: Request):
         
         # Handle empty or None payload
         if not payload:
-            logger.info(f"Empty payload received for {service} webhook - returning 200 OK")
+            logger.info(f"Empty payload received for {service} webhook - returning 202 Accepted")
+            response.status_code = 202
             return {
-                "status": "success",
+                "status": "accepted",
                 "message": "Empty payload received and ignored",
                 "service": service
             }
@@ -115,11 +116,12 @@ async def receive_webhook(service: str, request: Request):
             
     except ValueError as e:
         logger.error(f"Invalid JSON in {service} webhook: {e}")
-        # If it's just empty body, return success instead of error
+        # If it's just empty body, return accepted instead of error
         if "Expecting value" in str(e):
-            logger.info(f"Empty body received for {service} webhook - returning 200 OK")
+            logger.info(f"Empty body received for {service} webhook - returning 202 Accepted")
+            response.status_code = 202
             return {
-                "status": "success", 
+                "status": "accepted", 
                 "message": "Empty body received and ignored",
                 "service": service
             }
