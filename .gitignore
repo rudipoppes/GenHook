@@ -90,3 +90,7 @@ nohup.out
 *.bak
 *.backup
 *.tmp
+
+# random files:
+githubtoken.txt
+GenHook.code-workspace
