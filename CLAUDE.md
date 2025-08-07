@@ -39,6 +39,86 @@ python main.py
 Backend runs at: http://localhost:8000
 API docs at: http://localhost:8000/docs
 
+## Web Configuration Interface
+
+### Overview
+GenHook includes a comprehensive web-based configuration interface that eliminates the need to manually edit configuration files. The interface provides a 3-step wizard for creating webhook configurations with visual field selection and real-time testing.
+
+### Access
+- **Web Interface**: http://localhost:8000/config
+- **Configuration Management**: Visual webhook configuration without manual file editing
+- **Test Functionality**: Real-time testing of webhook configurations before saving
+
+### Features
+
+#### 1. **3-Step Configuration Wizard**
+- **Step 1: Payload Analysis** - Upload sample JSON payloads for field discovery
+- **Step 2: Field Selection** - Visually select fields with nested pattern support  
+- **Step 3: Template Building** - Create message templates with live preview and testing
+
+#### 2. **Visual Field Selection**
+- Automatic discovery of extractable fields from JSON payloads
+- Support for deeply nested patterns like `data{object}{amount}`
+- Filtering to show only leaf nodes (fields with actual values)
+- Real-time pattern generation for selected fields
+
+#### 3. **Test-Before-Save**
+- Test webhook configurations with real payloads before saving
+- Live field extraction and template variable substitution
+- Performance metrics (processing time)
+- Error handling and validation feedback
+
+#### 4. **Edit Mode**
+- Load existing configurations for modification
+- Add test payloads for testing configuration changes
+- Proper variable context for existing field selections
+- Update existing configurations safely
+
+#### 5. **Configuration Management**
+- View all current webhook configurations in a table
+- Edit and delete existing configurations
+- Automatic backup creation before changes
+- Real-time table updates after save/delete operations
+
+### Quick Start Guide
+
+#### Creating a New Webhook Configuration:
+1. Navigate to http://localhost:8000/config
+2. Enter a webhook type name (e.g., "github", "stripe")
+3. Paste a sample JSON payload from your webhook source
+4. Click "Analyze Payload" to discover available fields
+5. Select the fields you want to extract
+6. Create a message template using variables like `$field.name$`
+7. Click "Test Config" to verify the configuration works
+8. Click "Save Configuration" to add it to your webhook-config.ini
+
+#### Editing Existing Configurations:
+1. Click the edit button (pencil icon) on any configuration in the table
+2. Modify the message template as needed
+3. Click "Add Test Payload" to provide sample data for testing
+4. Paste a JSON payload and click "Test Config"
+5. Click "Save Configuration" to update the existing configuration
+
+### Configuration File Integration
+- Configurations are saved to `backend/config/webhook-config.ini`
+- Automatic backup creation in `backend/config/backups/`
+- Service restart capability (configurable)
+- No manual file editing required
+
+### Web Interface Configuration
+The web interface can be configured via `backend/config/web-config.ini`:
+
+```ini
+[ui]
+enabled = true
+max_analysis_depth = 3
+timeout_seconds = 30
+
+[features]
+auto_restart_service = false  # Set to true in production
+backup_configs = true
+```
+
 ## Supported Webhook Sources
 
 ### Service Providers
@@ -200,11 +280,80 @@ log_rotation = daily
 - ✅ HTTPS/SSL support for secure webhooks
 - ✅ Empty payload handling with 202 responses
 
-🔧 **Phase 5**: Web Configuration Interface (PLANNED)
-- 🟡 Web-based configuration interface
-- 🟡 Visual field selection from JSON payloads
-- 🟡 Live preview and template building
-- 🟡 Automated service restart integration
+🎉 **Phase 5**: Web Configuration Interface (COMPLETED)
+- ✅ 3-step configuration wizard (payload analysis, field selection, template building)
+- ✅ Visual field discovery and selection from JSON payloads
+- ✅ Real-time testing of webhook configurations before saving
+- ✅ Edit mode for existing configurations with test payload support
+- ✅ Enhanced field extraction engine with nested pattern parsing
+- ✅ Automatic configuration backup and file management
+- ✅ Bootstrap 5 responsive web interface at http://localhost:8000/config
+- ✅ Production-ready with clean codebase and error handling
+
+🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
+- 🟡 Thread pool implementation for high-volume processing
+- 🟡 Advanced monitoring and metrics collection
+- 🟡 Production deployment automation
+- 🟡 Load balancing and scaling strategies
+
+## Production Deployment
+
+### Port Configuration
+- **Development**: http://localhost:8000 (both API and web interface)
+- **Production**: Consider using a reverse proxy (nginx/Apache) to handle port 443 (HTTPS)
+- **API Endpoints**: `/webhook/{service}` for webhook reception
+- **Web Interface**: `/config` for configuration management
+- **Health Check**: `/health` for monitoring
+
+### AWS Deployment Considerations
+- **Application Load Balancer**: Route traffic to GenHook instances
+- **Security Groups**: Allow inbound 8000 from ALB, outbound 443 to SL1
+- **Auto Scaling**: Scale based on webhook volume metrics
+- **CloudWatch**: Monitor application logs and metrics
+- **Secrets Manager**: Store SL1 credentials securely
+
+### Reverse Proxy Configuration (nginx)
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-genhook-domain.com;
+    
+    ssl_certificate /path/to/ssl/cert.crt;
+    ssl_certificate_key /path/to/ssl/private.key;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Environment Variables for Production
+```bash
+# Set in production environment
+GENHOOK_ENV=production
+SL1_API_URL=https://your-sl1-instance.com/api/alert
+SL1_USERNAME=your_sl1_user
+SL1_PASSWORD=your_sl1_password
+WEB_INTERFACE_ENABLED=true
+AUTO_RESTART_SERVICE=true
+```
+
+### Configuration Files for Production
+- Update `backend/config/web-config.ini` to set `auto_restart_service = true`
+- Ensure `backend/config/webhook-config.ini` contains your webhook configurations
+- Backup configurations are stored in `backend/config/backups/`
+
+### Security Checklist
+- ✅ HTTPS enabled for all webhook endpoints
+- ✅ Web interface accessible only from authorized networks
+- ✅ SL1 credentials stored securely (not in code)
+- ✅ Webhook signature verification enabled where possible
+- ✅ Rate limiting configured for webhook endpoints
+- ✅ Regular backup of configuration files
 
 ## Security & Performance
 

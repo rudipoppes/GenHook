@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="GenHook Development Team" />
+  <meta name="dcterms.date" content="2025-08-07" />
+  <title>GenHook Complete Guide</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">GenHook Complete Guide</h1>
+<p class="author">GenHook Development Team</p>
+<p class="date">2025-08-07</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#genhook-project-notes"
+id="toc-genhook-project-notes"><span class="toc-section-number">1</span>
+GenHook Project Notes</a>
+<ul>
+<li><a href="#project-overview" id="toc-project-overview"><span
+class="toc-section-number">1.1</span> Project Overview</a>
+<ul>
+<li><a href="#system-purpose" id="toc-system-purpose"><span
+class="toc-section-number">1.1.1</span> System Purpose</a></li>
+<li><a href="#key-features" id="toc-key-features"><span
+class="toc-section-number">1.1.2</span> Key Features</a></li>
+<li><a href="#architecture" id="toc-architecture"><span
+class="toc-section-number">1.1.3</span> Architecture</a></li>
+</ul></li>
+<li><a href="#backend-startup" id="toc-backend-startup"><span
+class="toc-section-number">1.2</span> Backend Startup</a></li>
+<li><a href="#web-configuration-interface"
+id="toc-web-configuration-interface"><span
+class="toc-section-number">1.3</span> Web Configuration Interface</a>
+<ul>
+<li><a href="#overview" id="toc-overview"><span
+class="toc-section-number">1.3.1</span> Overview</a></li>
+<li><a href="#access" id="toc-access"><span
+class="toc-section-number">1.3.2</span> Access</a></li>
+<li><a href="#features" id="toc-features"><span
+class="toc-section-number">1.3.3</span> Features</a></li>
+<li><a href="#quick-start-guide" id="toc-quick-start-guide"><span
+class="toc-section-number">1.3.4</span> Quick Start Guide</a></li>
+<li><a href="#configuration-file-integration"
+id="toc-configuration-file-integration"><span
+class="toc-section-number">1.3.5</span> Configuration File
+Integration</a></li>
+<li><a href="#web-interface-configuration"
+id="toc-web-interface-configuration"><span
+class="toc-section-number">1.3.6</span> Web Interface
+Configuration</a></li>
+</ul></li>
+<li><a href="#supported-webhook-sources"
+id="toc-supported-webhook-sources"><span
+class="toc-section-number">1.4</span> Supported Webhook Sources</a>
+<ul>
+<li><a href="#service-providers" id="toc-service-providers"><span
+class="toc-section-number">1.4.1</span> Service Providers</a></li>
+<li><a href="#configuration-format" id="toc-configuration-format"><span
+class="toc-section-number">1.4.2</span> Configuration Format</a></li>
+<li><a href="#field-extraction-patterns"
+id="toc-field-extraction-patterns"><span
+class="toc-section-number">1.4.3</span> Field Extraction
+Patterns</a></li>
+</ul></li>
+<li><a href="#technical-architecture"
+id="toc-technical-architecture"><span
+class="toc-section-number">1.5</span> Technical Architecture</a>
+<ul>
+<li><a href="#threading-models" id="toc-threading-models"><span
+class="toc-section-number">1.5.1</span> Threading Models</a></li>
+<li><a href="#configuration-parameters"
+id="toc-configuration-parameters"><span
+class="toc-section-number">1.5.2</span> Configuration
+Parameters</a></li>
+<li><a href="#sl1-integration" id="toc-sl1-integration"><span
+class="toc-section-number">1.5.3</span> SL1 Integration</a></li>
+<li><a href="#queue-management" id="toc-queue-management"><span
+class="toc-section-number">1.5.4</span> Queue Management</a></li>
+</ul></li>
+<li><a href="#configuration-system" id="toc-configuration-system"><span
+class="toc-section-number">1.6</span> Configuration System</a>
+<ul>
+<li><a href="#template-variables" id="toc-template-variables"><span
+class="toc-section-number">1.6.1</span> Template Variables</a></li>
+<li><a href="#template-examples" id="toc-template-examples"><span
+class="toc-section-number">1.6.2</span> Template Examples</a></li>
+<li><a href="#environment-configuration"
+id="toc-environment-configuration"><span
+class="toc-section-number">1.6.3</span> Environment
+Configuration</a></li>
+</ul></li>
+<li><a href="#development-phases" id="toc-development-phases"><span
+class="toc-section-number">1.7</span> Development Phases</a>
+<ul>
+<li><a href="#phase-1-core-system" id="toc-phase-1-core-system"><span
+class="toc-section-number">1.7.1</span> Phase 1: Core System</a></li>
+<li><a href="#phase-2-multi-threading"
+id="toc-phase-2-multi-threading"><span
+class="toc-section-number">1.7.2</span> Phase 2:
+Multi-Threading</a></li>
+<li><a href="#phase-3-production-features"
+id="toc-phase-3-production-features"><span
+class="toc-section-number">1.7.3</span> Phase 3: Production
+Features</a></li>
+<li><a href="#phase-4-operations" id="toc-phase-4-operations"><span
+class="toc-section-number">1.7.4</span> Phase 4: Operations</a></li>
+<li><a href="#current-status" id="toc-current-status"><span
+class="toc-section-number">1.7.5</span> Current Status</a></li>
+</ul></li>
+<li><a href="#production-deployment"
+id="toc-production-deployment"><span
+class="toc-section-number">1.8</span> Production Deployment</a>
+<ul>
+<li><a href="#port-configuration" id="toc-port-configuration"><span
+class="toc-section-number">1.8.1</span> Port Configuration</a></li>
+<li><a href="#aws-deployment-considerations"
+id="toc-aws-deployment-considerations"><span
+class="toc-section-number">1.8.2</span> AWS Deployment
+Considerations</a></li>
+<li><a href="#reverse-proxy-configuration-nginx"
+id="toc-reverse-proxy-configuration-nginx"><span
+class="toc-section-number">1.8.3</span> Reverse Proxy Configuration
+(nginx)</a></li>
+<li><a href="#environment-variables-for-production"
+id="toc-environment-variables-for-production"><span
+class="toc-section-number">1.8.4</span> Environment Variables for
+Production</a></li>
+<li><a href="#configuration-files-for-production"
+id="toc-configuration-files-for-production"><span
+class="toc-section-number">1.8.5</span> Configuration Files for
+Production</a></li>
+<li><a href="#security-checklist" id="toc-security-checklist"><span
+class="toc-section-number">1.8.6</span> Security Checklist</a></li>
+</ul></li>
+<li><a href="#security-performance" id="toc-security-performance"><span
+class="toc-section-number">1.9</span> Security &amp; Performance</a>
+<ul>
+<li><a href="#security-considerations"
+id="toc-security-considerations"><span
+class="toc-section-number">1.9.1</span> Security Considerations</a></li>
+<li><a href="#error-handling-strategy"
+id="toc-error-handling-strategy"><span
+class="toc-section-number">1.9.2</span> Error Handling Strategy</a></li>
+<li><a href="#performance-optimization"
+id="toc-performance-optimization"><span
+class="toc-section-number">1.9.3</span> Performance
+Optimization</a></li>
+<li><a href="#monitoring-points" id="toc-monitoring-points"><span
+class="toc-section-number">1.9.4</span> Monitoring Points</a></li>
+<li><a href="#key-metrics-to-track" id="toc-key-metrics-to-track"><span
+class="toc-section-number">1.9.5</span> Key Metrics to Track</a></li>
+</ul></li>
+<li><a href="#web-configuration-interface-plan"
+id="toc-web-configuration-interface-plan"><span
+class="toc-section-number">1.10</span> Web Configuration Interface
+Plan</a>
+<ul>
+<li><a href="#overview-1" id="toc-overview-1"><span
+class="toc-section-number">1.10.1</span> Overview</a></li>
+<li><a href="#key-features-1" id="toc-key-features-1"><span
+class="toc-section-number">1.10.2</span> Key Features</a></li>
+<li><a href="#architecture-1" id="toc-architecture-1"><span
+class="toc-section-number">1.10.3</span> Architecture</a></li>
+<li><a href="#implementation-structure"
+id="toc-implementation-structure"><span
+class="toc-section-number">1.10.4</span> Implementation
+Structure</a></li>
+<li><a href="#user-workflow" id="toc-user-workflow"><span
+class="toc-section-number">1.10.5</span> User Workflow</a></li>
+<li><a href="#documentation" id="toc-documentation"><span
+class="toc-section-number">1.10.6</span> Documentation</a></li>
+<li><a href="#benefits" id="toc-benefits"><span
+class="toc-section-number">1.10.7</span> Benefits</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 data-number="1" id="genhook-project-notes"><span
+class="header-section-number">1</span> GenHook Project Notes</h1>
+<h2 data-number="1.1" id="project-overview"><span
+class="header-section-number">1.1</span> Project Overview</h2>
+<h3 data-number="1.1.1" id="system-purpose"><span
+class="header-section-number">1.1.1</span> System Purpose</h3>
+<p>GenHook is a configuration-driven, multi-threaded webhook receiver
+that: - Accepts webhooks from multiple services (GitHub, Stripe, Slack,
+AWS, etc.) - Extracts specified fields using configuration files -
+Generates human-readable messages using templates - Forwards events to
+SL1 monitoring system via API</p>
+<h3 data-number="1.1.2" id="key-features"><span
+class="header-section-number">1.1.2</span> Key Features</h3>
+<ul>
+<li><strong>Configuration-Driven</strong>: No code changes needed for
+new webhook types</li>
+<li><strong>Multi-Threaded</strong>: Handle thousands of concurrent
+webhooks</li>
+<li><strong>Template-Based Messaging</strong>: Flexible message
+generation</li>
+<li><strong>SL1 Integration</strong>: Direct API integration with
+default values</li>
+<li><strong>Error Handling</strong>: Graceful failure handling and retry
+logic</li>
+</ul>
+<h3 data-number="1.1.3" id="architecture"><span
+class="header-section-number">1.1.3</span> Architecture</h3>
+<ul>
+<li>FastAPI-based HTTP server</li>
+<li>7-step processing pipeline: Reception → Identification →
+Configuration Lookup → Field Extraction → Message Generation → SL1 API
+Call → Error Handling</li>
+<li>Configurable threading models: Thread Pool Pattern, Async Event
+Loop, or Hybrid Approach</li>
+<li>Queue management with in-memory and persistent options</li>
+</ul>
+<h2 data-number="1.2" id="backend-startup"><span
+class="header-section-number">1.2</span> Backend Startup</h2>
+<p>Always start the backend when working on this project:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> backend <span class="kw">&amp;&amp;</span> <span class="ex">./start.sh</span></span></code></pre></div>
+<p>Or manually:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> backend</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ../venv/bin/activate</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> requirements.txt</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> main.py</span></code></pre></div>
+<p>Backend runs at: http://localhost:8000 API docs at:
+http://localhost:8000/docs</p>
+<h2 data-number="1.3" id="web-configuration-interface"><span
+class="header-section-number">1.3</span> Web Configuration
+Interface</h2>
+<h3 data-number="1.3.1" id="overview"><span
+class="header-section-number">1.3.1</span> Overview</h3>
+<p>GenHook includes a comprehensive web-based configuration interface
+that eliminates the need to manually edit configuration files. The
+interface provides a 3-step wizard for creating webhook configurations
+with visual field selection and real-time testing.</p>
+<h3 data-number="1.3.2" id="access"><span
+class="header-section-number">1.3.2</span> Access</h3>
+<ul>
+<li><strong>Web Interface</strong>: http://localhost:8000/config</li>
+<li><strong>Configuration Management</strong>: Visual webhook
+configuration without manual file editing</li>
+<li><strong>Test Functionality</strong>: Real-time testing of webhook
+configurations before saving</li>
+</ul>
+<h3 data-number="1.3.3" id="features"><span
+class="header-section-number">1.3.3</span> Features</h3>
+<h4 data-number="1.3.3.1" id="step-configuration-wizard"><span
+class="header-section-number">1.3.3.1</span> 1. <strong>3-Step
+Configuration Wizard</strong></h4>
+<ul>
+<li><strong>Step 1: Payload Analysis</strong> - Upload sample JSON
+payloads for field discovery</li>
+<li><strong>Step 2: Field Selection</strong> - Visually select fields
+with nested pattern support<br />
+</li>
+<li><strong>Step 3: Template Building</strong> - Create message
+templates with live preview and testing</li>
+</ul>
+<h4 data-number="1.3.3.2" id="visual-field-selection"><span
+class="header-section-number">1.3.3.2</span> 2. <strong>Visual Field
+Selection</strong></h4>
+<ul>
+<li>Automatic discovery of extractable fields from JSON payloads</li>
+<li>Support for deeply nested patterns like
+<code>data{object}{amount}</code></li>
+<li>Filtering to show only leaf nodes (fields with actual values)</li>
+<li>Real-time pattern generation for selected fields</li>
+</ul>
+<h4 data-number="1.3.3.3" id="test-before-save"><span
+class="header-section-number">1.3.3.3</span> 3.
+<strong>Test-Before-Save</strong></h4>
+<ul>
+<li>Test webhook configurations with real payloads before saving</li>
+<li>Live field extraction and template variable substitution</li>
+<li>Performance metrics (processing time)</li>
+<li>Error handling and validation feedback</li>
+</ul>
+<h4 data-number="1.3.3.4" id="edit-mode"><span
+class="header-section-number">1.3.3.4</span> 4. <strong>Edit
+Mode</strong></h4>
+<ul>
+<li>Load existing configurations for modification</li>
+<li>Add test payloads for testing configuration changes</li>
+<li>Proper variable context for existing field selections</li>
+<li>Update existing configurations safely</li>
+</ul>
+<h4 data-number="1.3.3.5" id="configuration-management"><span
+class="header-section-number">1.3.3.5</span> 5. <strong>Configuration
+Management</strong></h4>
+<ul>
+<li>View all current webhook configurations in a table</li>
+<li>Edit and delete existing configurations</li>
+<li>Automatic backup creation before changes</li>
+<li>Real-time table updates after save/delete operations</li>
+</ul>
+<h3 data-number="1.3.4" id="quick-start-guide"><span
+class="header-section-number">1.3.4</span> Quick Start Guide</h3>
+<h4 data-number="1.3.4.1"
+id="creating-a-new-webhook-configuration"><span
+class="header-section-number">1.3.4.1</span> Creating a New Webhook
+Configuration:</h4>
+<ol type="1">
+<li>Navigate to http://localhost:8000/config</li>
+<li>Enter a webhook type name (e.g., “github”, “stripe”)</li>
+<li>Paste a sample JSON payload from your webhook source</li>
+<li>Click “Analyze Payload” to discover available fields</li>
+<li>Select the fields you want to extract</li>
+<li>Create a message template using variables like
+<code>$field.name$</code></li>
+<li>Click “Test Config” to verify the configuration works</li>
+<li>Click “Save Configuration” to add it to your webhook-config.ini</li>
+</ol>
+<h4 data-number="1.3.4.2" id="editing-existing-configurations"><span
+class="header-section-number">1.3.4.2</span> Editing Existing
+Configurations:</h4>
+<ol type="1">
+<li>Click the edit button (pencil icon) on any configuration in the
+table</li>
+<li>Modify the message template as needed</li>
+<li>Click “Add Test Payload” to provide sample data for testing</li>
+<li>Paste a JSON payload and click “Test Config”</li>
+<li>Click “Save Configuration” to update the existing configuration</li>
+</ol>
+<h3 data-number="1.3.5" id="configuration-file-integration"><span
+class="header-section-number">1.3.5</span> Configuration File
+Integration</h3>
+<ul>
+<li>Configurations are saved to
+<code>backend/config/webhook-config.ini</code></li>
+<li>Automatic backup creation in
+<code>backend/config/backups/</code></li>
+<li>Service restart capability (configurable)</li>
+<li>No manual file editing required</li>
+</ul>
+<h3 data-number="1.3.6" id="web-interface-configuration"><span
+class="header-section-number">1.3.6</span> Web Interface
+Configuration</h3>
+<p>The web interface can be configured via
+<code>backend/config/web-config.ini</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[ui]</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">enabled </span><span class="ot">=</span><span class="st"> </span><span class="kw">true</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">max_analysis_depth </span><span class="ot">=</span><span class="st"> </span><span class="dv">3</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dt">timeout_seconds </span><span class="ot">=</span><span class="st"> </span><span class="dv">30</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">[features]</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="dt">auto_restart_service </span><span class="ot">=</span><span class="st"> false  # Set to true in production</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="dt">backup_configs </span><span class="ot">=</span><span class="st"> </span><span class="kw">true</span></span></code></pre></div>
+<h2 data-number="1.4" id="supported-webhook-sources"><span
+class="header-section-number">1.4</span> Supported Webhook Sources</h2>
+<h3 data-number="1.4.1" id="service-providers"><span
+class="header-section-number">1.4.1</span> Service Providers</h3>
+<ul>
+<li><strong>GitHub</strong>: Push, Pull Request, Issues, Releases</li>
+<li><strong>Stripe</strong>: Payments, Subscriptions, Customers</li>
+<li><strong>Slack</strong>: Messages, User Actions, App Events</li>
+<li><strong>AWS EventBridge/CloudWatch</strong>: EC2, Lambda, S3,
+CloudFormation</li>
+<li><strong>Cisco Meraki</strong>: Device Alerts, Network Events,
+Security Events</li>
+<li><strong>Jira</strong>: Issue Updates, Comments, Transitions</li>
+<li><strong>Azure Event Grid</strong>: Storage, Resource Management,
+Service Bus</li>
+<li><strong>Shopify</strong>: Orders, Customers, Products,
+Inventory</li>
+</ul>
+<h3 data-number="1.4.2" id="configuration-format"><span
+class="header-section-number">1.4.2</span> Configuration Format</h3>
+<p>Each webhook type is configured using INI syntax:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">webhook_type: field1,field2,nested{subfield}::Message template with $variables$</span></span></code></pre></div>
+<h3 data-number="1.4.3" id="field-extraction-patterns"><span
+class="header-section-number">1.4.3</span> Field Extraction
+Patterns</h3>
+<ul>
+<li><strong>Simple Field</strong>: <code>field_name</code></li>
+<li><strong>Nested Object</strong>: <code>object{subfield}</code></li>
+<li><strong>Deep Nesting</strong>:
+<code>level1{level2{level3}}</code></li>
+<li><strong>Arrays</strong>:
+<code>array_field{item_property}</code></li>
+</ul>
+<h2 data-number="1.5" id="technical-architecture"><span
+class="header-section-number">1.5</span> Technical Architecture</h2>
+<h3 data-number="1.5.1" id="threading-models"><span
+class="header-section-number">1.5.1</span> Threading Models</h3>
+<ol type="1">
+<li><strong>Thread Pool Pattern</strong>: HTTP Server → Request Queue →
+Thread Pool → SL1 API
+<ul>
+<li>Use Case: Moderate loads (&lt; 1000 req/sec)</li>
+<li>Pros: Simple, predictable resource usage</li>
+<li>Cons: Thread creation overhead</li>
+</ul></li>
+<li><strong>Async Event Loop</strong>: Event Loop → Async Tasks →
+Non-blocking I/O
+<ul>
+<li>Use Case: High concurrency, I/O bound</li>
+<li>Pros: Memory efficient, handles 10k+ connections</li>
+<li>Cons: Single-threaded CPU processing</li>
+</ul></li>
+<li><strong>Hybrid Approach</strong>: Async HTTP → Message Queue →
+Worker Thread Pool
+<ul>
+<li>Use Case: Mixed CPU/I/O workloads</li>
+<li>Pros: Best of both worlds</li>
+<li>Cons: More complex architecture</li>
+</ul></li>
+</ol>
+<h3 data-number="1.5.2" id="configuration-parameters"><span
+class="header-section-number">1.5.2</span> Configuration Parameters</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Threading Configuration</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">max_worker_threads </span><span class="ot">=</span><span class="st"> </span><span class="dv">50</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dt">queue_max_size </span><span class="ot">=</span><span class="st"> </span><span class="dv">10000</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="dt">processing_timeout </span><span class="ot">=</span><span class="st"> 30s</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="dt">retry_max_attempts </span><span class="ot">=</span><span class="st"> </span><span class="dv">3</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="dt">shutdown_grace_period </span><span class="ot">=</span><span class="st"> 60s</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-webhook limits</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="dt">shopify_max_concurrent </span><span class="ot">=</span><span class="st"> </span><span class="dv">10</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="dt">slack_max_concurrent </span><span class="ot">=</span><span class="st"> </span><span class="dv">20</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="dt">aws_max_concurrent </span><span class="ot">=</span><span class="st"> </span><span class="dv">100</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="dt">meraki_max_concurrent </span><span class="ot">=</span><span class="st"> </span><span class="dv">25</span></span></code></pre></div>
+<h3 data-number="1.5.3" id="sl1-integration"><span
+class="header-section-number">1.5.3</span> SL1 Integration</h3>
+<ul>
+<li><strong>API Endpoint</strong>: <code>POST /api/alert</code></li>
+<li><strong>Authentication</strong>: HTTP Basic Auth
+(username/password)</li>
+<li><strong>Payload Format</strong>: Simplified JSON with only
+<code>message</code> field populated</li>
+<li><strong>Default Values</strong>: All other fields use SL1
+defaults</li>
+<li><strong>Retry Logic</strong>: Exponential backoff for failed API
+calls</li>
+</ul>
+<h3 data-number="1.5.4" id="queue-management"><span
+class="header-section-number">1.5.4</span> Queue Management</h3>
+<ul>
+<li><strong>In-Memory</strong>: Low latency, volatile</li>
+<li><strong>Persistent</strong>: Redis/RabbitMQ for reliability</li>
+<li><strong>Priority</strong>: Different webhook types by
+importance</li>
+<li><strong>Dead Letter</strong>: Failed processing queue</li>
+</ul>
+<h2 data-number="1.6" id="configuration-system"><span
+class="header-section-number">1.6</span> Configuration System</h2>
+<h3 data-number="1.6.1" id="template-variables"><span
+class="header-section-number">1.6.1</span> Template Variables</h3>
+<ul>
+<li><strong>Simple Substitution</strong>: <code>$field_name$</code></li>
+<li><strong>Nested Access</strong>: <code>$object.subfield$</code></li>
+<li><strong>Array Access</strong>: <code>$array[0].property$</code></li>
+</ul>
+<h3 data-number="1.6.2" id="template-examples"><span
+class="header-section-number">1.6.2</span> Template Examples</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GitHub Events</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dt">github: action,pull_request{title,user{login}},repository{name}::GitHub $action$ on $repository.name$: &quot;$pull_request.title$&quot; by $pull_request.user.login$</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Stripe Payments</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="dt">stripe: type,data{object{amount,currency,status}}::Stripe $type$: Payment of $data.object.amount$ $data.object.currency$ status: $data.object.status$</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Slack Messages  </span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="dt">slack: event{type,user,text}::Slack $event.type$ from user $event.user$: &quot;$event.text$&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># AWS Events</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="dt">aws: detail-type,source,region,detail{instance-id,state}::AWS $detail-type$ from $source$ in $region$: Instance $detail.instance-id$ state: $detail.state$</span></span></code></pre></div>
+<h3 data-number="1.6.3" id="environment-configuration"><span
+class="header-section-number">1.6.3</span> Environment
+Configuration</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Server Settings</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">server_port </span><span class="ot">=</span><span class="st"> </span><span class="dv">8080</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="dt">server_host </span><span class="ot">=</span><span class="st"> 0.0.0.0</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="dt">ssl_enabled </span><span class="ot">=</span><span class="st"> </span><span class="kw">true</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="dt">ssl_cert_path </span><span class="ot">=</span><span class="st"> /etc/ssl/webhook-receiver.crt</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="dt">ssl_key_path </span><span class="ot">=</span><span class="st"> /etc/ssl/webhook-receiver.key</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># SL1 API Settings</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="dt">sl1_api_url </span><span class="ot">=</span><span class="st"> https://sl1.company.com/api/alert</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="dt">sl1_username </span><span class="ot">=</span><span class="st"> your_sl1_username</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="dt">sl1_password </span><span class="ot">=</span><span class="st"> your_sl1_password</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="dt">sl1_timeout </span><span class="ot">=</span><span class="st"> 30s</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="dt">sl1_retry_attempts </span><span class="ot">=</span><span class="st"> </span><span class="dv">3</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Threading Settings</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="dt">max_threads </span><span class="ot">=</span><span class="st"> </span><span class="dv">50</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="dt">queue_size </span><span class="ot">=</span><span class="st"> </span><span class="dv">10000</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="dt">thread_timeout </span><span class="ot">=</span><span class="st"> 30s</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Logging</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="dt">log_level </span><span class="ot">=</span><span class="st"> INFO</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="dt">log_file </span><span class="ot">=</span><span class="st"> /var/log/webhook-receiver.log</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="dt">log_max_size </span><span class="ot">=</span><span class="st"> 100MB</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="dt">log_rotation </span><span class="ot">=</span><span class="st"> daily</span></span></code></pre></div>
+<h2 data-number="1.7" id="development-phases"><span
+class="header-section-number">1.7</span> Development Phases</h2>
+<h3 data-number="1.7.1" id="phase-1-core-system"><span
+class="header-section-number">1.7.1</span> Phase 1: Core System</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />HTTP server with webhook
+endpoints</label></li>
+<li><label><input type="checkbox" />Configuration file
+parser</label></li>
+<li><label><input type="checkbox" />JSON field extraction
+engine</label></li>
+<li><label><input type="checkbox" />Template processing
+system</label></li>
+<li><label><input type="checkbox" />Basic SL1 API
+integration</label></li>
+</ul>
+<h3 data-number="1.7.2" id="phase-2-multi-threading"><span
+class="header-section-number">1.7.2</span> Phase 2: Multi-Threading</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Thread pool
+implementation</label></li>
+<li><label><input type="checkbox" />Request queue system</label></li>
+<li><label><input type="checkbox" />Error handling and
+retries</label></li>
+<li><label><input type="checkbox" />Graceful shutdown
+handling</label></li>
+<li><label><input type="checkbox" />Resource cleanup</label></li>
+</ul>
+<h3 data-number="1.7.3" id="phase-3-production-features"><span
+class="header-section-number">1.7.3</span> Phase 3: Production
+Features</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Webhook signature
+verification</label></li>
+<li><label><input type="checkbox" />Rate limiting and
+throttling</label></li>
+<li><label><input type="checkbox" />Comprehensive logging</label></li>
+<li><label><input type="checkbox" />Metrics collection</label></li>
+<li><label><input type="checkbox" />Health check endpoints</label></li>
+</ul>
+<h3 data-number="1.7.4" id="phase-4-operations"><span
+class="header-section-number">1.7.4</span> Phase 4: Operations</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Configuration
+validation</label></li>
+<li><label><input type="checkbox" />Performance monitoring</label></li>
+<li><label><input type="checkbox" />Alerting on failures</label></li>
+<li><label><input type="checkbox" />Documentation and
+runbooks</label></li>
+<li><label><input type="checkbox" />Deployment automation</label></li>
+</ul>
+<h3 data-number="1.7.5" id="current-status"><span
+class="header-section-number">1.7.5</span> Current Status</h3>
+<p>🚀 <strong>Phase 1</strong>: Core System (COMPLETED) - ✅ FastAPI
+HTTP server with webhook endpoints - ✅ Configuration file parser and
+management - ✅ JSON field extraction engine with array support - ✅
+Template processing system - ✅ SL1 API integration with retry logic -
+✅ HTTPS/SSL support for secure webhooks - ✅ Empty payload handling
+with 202 responses</p>
+<p>🎉 <strong>Phase 5</strong>: Web Configuration Interface (COMPLETED)
+- ✅ 3-step configuration wizard (payload analysis, field selection,
+template building) - ✅ Visual field discovery and selection from JSON
+payloads - ✅ Real-time testing of webhook configurations before saving
+- ✅ Edit mode for existing configurations with test payload support -
+✅ Enhanced field extraction engine with nested pattern parsing - ✅
+Automatic configuration backup and file management - ✅ Bootstrap 5
+responsive web interface at http://localhost:8000/config - ✅
+Production-ready with clean codebase and error handling</p>
+<p>🔧 <strong>Next Phases</strong>: Multi-Threading &amp; Production
+Features (PLANNED) - 🟡 Thread pool implementation for high-volume
+processing - 🟡 Advanced monitoring and metrics collection - 🟡
+Production deployment automation - 🟡 Load balancing and scaling
+strategies</p>
+<h2 data-number="1.8" id="production-deployment"><span
+class="header-section-number">1.8</span> Production Deployment</h2>
+<h3 data-number="1.8.1" id="port-configuration"><span
+class="header-section-number">1.8.1</span> Port Configuration</h3>
+<ul>
+<li><strong>Development</strong>: http://localhost:8000 (both API and
+web interface)</li>
+<li><strong>Production</strong>: Consider using a reverse proxy
+(nginx/Apache) to handle port 443 (HTTPS)</li>
+<li><strong>API Endpoints</strong>: <code>/webhook/{service}</code> for
+webhook reception</li>
+<li><strong>Web Interface</strong>: <code>/config</code> for
+configuration management</li>
+<li><strong>Health Check</strong>: <code>/health</code> for
+monitoring</li>
+</ul>
+<h3 data-number="1.8.2" id="aws-deployment-considerations"><span
+class="header-section-number">1.8.2</span> AWS Deployment
+Considerations</h3>
+<ul>
+<li><strong>Application Load Balancer</strong>: Route traffic to GenHook
+instances</li>
+<li><strong>Security Groups</strong>: Allow inbound 8000 from ALB,
+outbound 443 to SL1</li>
+<li><strong>Auto Scaling</strong>: Scale based on webhook volume
+metrics</li>
+<li><strong>CloudWatch</strong>: Monitor application logs and
+metrics</li>
+<li><strong>Secrets Manager</strong>: Store SL1 credentials
+securely</li>
+</ul>
+<h3 data-number="1.8.3" id="reverse-proxy-configuration-nginx"><span
+class="header-section-number">1.8.3</span> Reverse Proxy Configuration
+(nginx)</h3>
+<pre class="nginx"><code>server {
+    listen 443 ssl;
+    server_name your-genhook-domain.com;
+    
+    ssl_certificate /path/to/ssl/cert.crt;
+    ssl_certificate_key /path/to/ssl/private.key;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+<h3 data-number="1.8.4" id="environment-variables-for-production"><span
+class="header-section-number">1.8.4</span> Environment Variables for
+Production</h3>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set in production environment</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">GENHOOK_ENV</span><span class="op">=</span>production</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_API_URL</span><span class="op">=</span>https://your-sl1-instance.com/api/alert</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_USERNAME</span><span class="op">=</span>your_sl1_user</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_PASSWORD</span><span class="op">=</span>your_sl1_password</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="va">WEB_INTERFACE_ENABLED</span><span class="op">=</span>true</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="va">AUTO_RESTART_SERVICE</span><span class="op">=</span>true</span></code></pre></div>
+<h3 data-number="1.8.5" id="configuration-files-for-production"><span
+class="header-section-number">1.8.5</span> Configuration Files for
+Production</h3>
+<ul>
+<li>Update <code>backend/config/web-config.ini</code> to set
+<code>auto_restart_service = true</code></li>
+<li>Ensure <code>backend/config/webhook-config.ini</code> contains your
+webhook configurations</li>
+<li>Backup configurations are stored in
+<code>backend/config/backups/</code></li>
+</ul>
+<h3 data-number="1.8.6" id="security-checklist"><span
+class="header-section-number">1.8.6</span> Security Checklist</h3>
+<ul>
+<li>✅ HTTPS enabled for all webhook endpoints</li>
+<li>✅ Web interface accessible only from authorized networks</li>
+<li>✅ SL1 credentials stored securely (not in code)</li>
+<li>✅ Webhook signature verification enabled where possible</li>
+<li>✅ Rate limiting configured for webhook endpoints</li>
+<li>✅ Regular backup of configuration files</li>
+</ul>
+<h2 data-number="1.9" id="security-performance"><span
+class="header-section-number">1.9</span> Security &amp; Performance</h2>
+<h3 data-number="1.9.1" id="security-considerations"><span
+class="header-section-number">1.9.1</span> Security Considerations</h3>
+<ul>
+<li><strong>Webhook Verification</strong>: Validate signatures from
+webhook providers</li>
+<li><strong>Rate Limiting</strong>: Prevent spam/DoS attacks</li>
+<li><strong>Input Validation</strong>: Sanitize all webhook
+payloads</li>
+<li><strong>Authentication</strong>: Secure SL1 API credentials
+(username/password for HTTP Basic Auth)</li>
+<li><strong>HTTPS Only</strong>: Encrypt all webhook traffic</li>
+</ul>
+<h3 data-number="1.9.2" id="error-handling-strategy"><span
+class="header-section-number">1.9.2</span> Error Handling Strategy</h3>
+<ul>
+<li><strong>Graceful Degradation</strong>: Continue processing other
+webhooks</li>
+<li><strong>Retry Logic</strong>: Exponential backoff for failed API
+calls</li>
+<li><strong>Dead Letter Queue</strong>: Store unprocessable
+webhooks</li>
+<li><strong>Circuit Breaker</strong>: Protect against downstream
+failures</li>
+<li><strong>Timeout Handling</strong>: Prevent hung threads</li>
+</ul>
+<h3 data-number="1.9.3" id="performance-optimization"><span
+class="header-section-number">1.9.3</span> Performance Optimization</h3>
+<ul>
+<li><strong>Connection Pooling</strong>: Reuse HTTP connections to
+SL1</li>
+<li><strong>Batch Processing</strong>: Group multiple events when
+possible</li>
+<li><strong>Caching</strong>: Cache configuration and templates</li>
+<li><strong>Metrics</strong>: Monitor processing times and
+throughput</li>
+<li><strong>Profiling</strong>: Identify bottlenecks in production</li>
+</ul>
+<h3 data-number="1.9.4" id="monitoring-points"><span
+class="header-section-number">1.9.4</span> Monitoring Points</h3>
+<ul>
+<li><strong>Webhook Ingestion Rate</strong>: Webhooks received per
+second</li>
+<li><strong>Processing Latency</strong>: Time from receipt to SL1 API
+call</li>
+<li><strong>Error Rates</strong>: Failed processing percentage</li>
+<li><strong>Queue Depth</strong>: Backlog of pending webhooks</li>
+<li><strong>Thread Utilization</strong>: Active vs idle threads</li>
+<li><strong>SL1 API Response Times</strong>: Downstream service
+health</li>
+</ul>
+<h3 data-number="1.9.5" id="key-metrics-to-track"><span
+class="header-section-number">1.9.5</span> Key Metrics to Track</h3>
+<ul>
+<li><strong>Webhook Reception Rate</strong>: webhooks/second by
+type</li>
+<li><strong>Processing Latency</strong>: 95th percentile processing
+time</li>
+<li><strong>Error Rate</strong>: Failed webhooks percentage</li>
+<li><strong>SL1 API Success Rate</strong>: Successful API calls
+percentage</li>
+<li><strong>Queue Depth</strong>: Current backlog size</li>
+<li><strong>Thread Pool Utilization</strong>: Active threads / total
+threads</li>
+</ul>
+<h2 data-number="1.10" id="web-configuration-interface-plan"><span
+class="header-section-number">1.10</span> Web Configuration Interface
+Plan</h2>
+<h3 data-number="1.10.1" id="overview-1"><span
+class="header-section-number">1.10.1</span> Overview</h3>
+<p>A comprehensive web-based interface for configuring GenHook webhooks
+without manual file editing.</p>
+<h3 data-number="1.10.2" id="key-features-1"><span
+class="header-section-number">1.10.2</span> Key Features</h3>
+<ul>
+<li><strong>Visual Field Selection</strong>: Interactive tree view of
+JSON payload fields</li>
+<li><strong>Live Preview</strong>: Real-time message generation
+preview</li>
+<li><strong>Template Builder</strong>: Guided template creation with
+variable suggestions<br />
+</li>
+<li><strong>Configuration Management</strong>: Safe config updates with
+backup and rollback</li>
+<li><strong>Service Integration</strong>: Automated service restart
+after configuration changes</li>
+</ul>
+<h3 data-number="1.10.3" id="architecture-1"><span
+class="header-section-number">1.10.3</span> Architecture</h3>
+<ul>
+<li><strong>Framework</strong>: FastAPI + Jinja2 templates + Vanilla
+JavaScript</li>
+<li><strong>Configuration-Driven</strong>: All settings externalized to
+<code>web-config.ini</code></li>
+<li><strong>Security</strong>: IP-based access control and input
+validation</li>
+<li><strong>File Operations</strong>: Atomic config updates with backup
+mechanisms</li>
+</ul>
+<h3 data-number="1.10.4" id="implementation-structure"><span
+class="header-section-number">1.10.4</span> Implementation
+Structure</h3>
+<pre><code>backend/
+├── app/
+│   ├── web/                    # Web interface module
+│   │   ├── routes.py          # Web UI routes
+│   │   ├── services.py        # Config management logic
+│   │   └── models.py          # Pydantic models
+│   ├── templates/             # Jinja2 HTML templates
+│   ├── static/               # CSS, JS, assets
+├── config/
+│   └── web-config.ini        # Web interface configuration</code></pre>
+<h3 data-number="1.10.5" id="user-workflow"><span
+class="header-section-number">1.10.5</span> User Workflow</h3>
+<ol type="1">
+<li>Access web interface at <code>/config</code></li>
+<li>Paste JSON payload from webhook source</li>
+<li>Select fields using interactive tree interface</li>
+<li>Build message template with live preview</li>
+<li>Save configuration (auto-restarts service)</li>
+<li>Test with actual webhook</li>
+</ol>
+<h3 data-number="1.10.6" id="documentation"><span
+class="header-section-number">1.10.6</span> Documentation</h3>
+<ul>
+<li><strong>Full Implementation Plan</strong>:
+<code>WEB_INTERFACE_PLAN.md</code></li>
+<li><strong>Branch Strategy</strong>:
+<code>feature/web-config-interface</code></li>
+<li><strong>Status</strong>: Ready for implementation</li>
+</ul>
+<h3 data-number="1.10.7" id="benefits"><span
+class="header-section-number">1.10.7</span> Benefits</h3>
+<ul>
+<li><strong>User-Friendly</strong>: No technical knowledge required</li>
+<li><strong>Error Reduction</strong>: Visual field selection prevents
+mistakes</li>
+<li><strong>Fast Onboarding</strong>: Quick setup of new webhook
+sources</li>
+<li><strong>Safe Deployment</strong>: Backup and rollback
+capabilities</li>
+</ul>
+</body>
+</html>
