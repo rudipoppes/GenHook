@@ -1,14 +1,46 @@
 from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import logging
 import os
+from pathlib import Path
+
 from app.core.config import get_config, get_webhook_config
 from app.core.extractor import extract_fields
 from app.services.sl1_service import sl1_service
+from app.web import web_router
+from app.web.config import get_web_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="GenHook API", version="1.0.0")
+
+# Configure web interface if enabled
+web_config = get_web_config()
+if web_config.enabled:
+    # Set up static files and templates
+    static_dir = Path(__file__).parent / "app" / "static"
+    templates_dir = Path(__file__).parent / "app" / "templates"
+    
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+        logger.info("✅ Static files mounted at /static")
+    
+    if templates_dir.exists():
+        templates = Jinja2Templates(directory=str(templates_dir))
+        
+        # Configure templates in web routes module
+        import app.web.routes as web_routes_module
+        web_routes_module.templates = templates
+        
+        # Include web router
+        app.include_router(web_routes)
+        logger.info("✅ Web interface enabled and configured")
+    else:
+        logger.warning("⚠️ Templates directory not found, web interface disabled")
+else:
+    logger.info("ℹ️ Web interface disabled in configuration")
 
 @app.get("/")
 async def root():

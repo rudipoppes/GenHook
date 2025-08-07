@@ -29,7 +29,10 @@
       "Bash(grep:*)",
       "Bash(pandoc:*)",
       "Bash(open SSL_Setup_Guide.html)",
-      "Bash(./generate_ssl_pdf.sh:*)"
+      "Bash(./generate_ssl_pdf.sh:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(./generate_web_interface_pdf.sh:*)"
     ],
     "deny": []
   }
