@@ -570,8 +570,15 @@
                 
                 if (result.success) {
                     showNotification('Success', `Webhook '${currentWebhookType}' saved successfully`, 'success');
-                    loadConfigurations();
+                    
+                    // Force complete reset and refresh
                     resetWizard();
+                    loadConfigurations();
+                    
+                    // Additional cleanup - force DOM refresh
+                    setTimeout(() => {
+                        resetWizard();
+                    }, 100);
                 } else {
                     showNotification('Error', result.error_message, 'error');
                 }
@@ -581,25 +588,38 @@
         }
 
         function resetWizard() {
+            // Clear all global state
             analyzedPayload = null;
             selectedFieldsList = [];
             currentWebhookType = '';
             
+            // Clear all form fields
             document.getElementById('webhookType').value = '';
             document.getElementById('jsonPayload').value = '';
             document.getElementById('messageTemplate').value = '';
+            document.getElementById('editTestPayload').value = '';
+            
+            // Clear all dynamic content areas
             document.getElementById('fieldsTree').innerHTML = '';
             document.getElementById('selectedFields').innerHTML = '<p class="text-muted"><i>No fields selected</i></p>';
             document.getElementById('availableVariables').innerHTML = '';
             document.getElementById('messagePreview').innerHTML = '<em class="text-muted">Preview will appear here...</em>';
             
+            // Reset all button states
             document.getElementById('analyzeBtn').disabled = true;
             document.getElementById('nextToTemplateBtn').disabled = true;
             document.getElementById('saveConfigBtn').disabled = true;
             document.getElementById('toggleTestPayloadBtn').style.display = 'none';
             document.getElementById('editModeTestPayload').classList.add('d-none');
             
+            // Clear any selected checkboxes in fields tree
+            const checkboxes = document.querySelectorAll('#fieldsTree input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Reset to step 1
             showStep(1);
+            
+            console.log('Wizard completely reset');
         }
 
         async function loadConfigurations() {
