@@ -34,6 +34,57 @@ Internet → Load Balancer (443) → Reverse Proxy → GenHook (8000) → SL1 AP
 - [ ] Web interface configurations validated
 - [ ] Backup strategy implemented
 
+## Port Configuration Strategy
+
+**GenHook uses a configuration-driven approach - no code changes required!**
+
+### Configuration Files
+- **Development**: `backend/config/app-config.ini` (default port 8000)
+- **Production**: `backend/config/app-config.prod.ini` (automatically detected if exists)
+
+### Port Configuration Options
+
+#### Option 1: Direct HTTPS (Port 443)
+Create production config for direct HTTPS:
+```ini
+# backend/config/app-config.prod.ini
+[server]
+host = 0.0.0.0
+port = 443
+reload = false
+```
+
+**Benefits**: Direct HTTPS, no reverse proxy needed
+**Requirements**: SSL certificates, root privileges for port 443
+
+#### Option 2: Reverse Proxy (Recommended)
+Keep default port 8000, use nginx/Apache for HTTPS:
+```ini
+# backend/config/app-config.ini (unchanged)
+[server]
+host = 0.0.0.0
+port = 8000
+reload = false
+```
+
+**Benefits**: Better security, easier SSL management, load balancing
+**Setup**: Configure nginx/Apache to proxy 443 → 8000
+
+#### Option 3: Custom Port
+Use any available port:
+```ini
+# backend/config/app-config.prod.ini
+[server]
+host = 0.0.0.0
+port = 9000  # or any port
+reload = false
+```
+
+### Configuration Priority
+1. If `app-config.prod.ini` exists → production config used
+2. Otherwise → `app-config.ini` (development) used
+3. **No code modification ever required**
+
 ## Deployment Options
 
 ### Option 1: AWS EC2 with Application Load Balancer (Recommended)
@@ -96,6 +147,14 @@ sudo -u genhook ./venv/bin/pip install -r backend/requirements.txt
 # Create production configuration
 sudo -u genhook cp backend/config/app-config.ini.example backend/config/app-config.ini
 sudo -u genhook cp backend/config/web-config.ini.example backend/config/web-config.ini
+
+# Configure port for production (IMPORTANT: Configuration-driven approach)
+# Option 1: Direct HTTPS on port 443 (requires SSL certs)
+sudo -u genhook cp backend/config/app-config.prod.ini.example backend/config/app-config.prod.ini
+sudo -u genhook sed -i 's/port = 8000/port = 443/' backend/config/app-config.prod.ini
+
+# Option 2: Keep port 8000 for reverse proxy (recommended)
+# No changes needed - use default port 8000 with nginx/ALB handling HTTPS
 
 # Create systemd service
 sudo tee /etc/systemd/system/genhook.service > /dev/null <<EOF

@@ -198,8 +198,10 @@ class="toc-section-number">1.7.5</span> Current Status</a></li>
 id="toc-production-deployment"><span
 class="toc-section-number">1.8</span> Production Deployment</a>
 <ul>
-<li><a href="#port-configuration" id="toc-port-configuration"><span
-class="toc-section-number">1.8.1</span> Port Configuration</a></li>
+<li><a href="#port-configuration-configuration-driven"
+id="toc-port-configuration-configuration-driven"><span
+class="toc-section-number">1.8.1</span> Port Configuration
+(Configuration-Driven)</a></li>
 <li><a href="#aws-deployment-considerations"
 id="toc-aws-deployment-considerations"><span
 class="toc-section-number">1.8.2</span> AWS Deployment
@@ -657,19 +659,66 @@ Production deployment automation - 🟡 Load balancing and scaling
 strategies</p>
 <h2 data-number="1.8" id="production-deployment"><span
 class="header-section-number">1.8</span> Production Deployment</h2>
-<h3 data-number="1.8.1" id="port-configuration"><span
-class="header-section-number">1.8.1</span> Port Configuration</h3>
+<h3 data-number="1.8.1"
+id="port-configuration-configuration-driven"><span
+class="header-section-number">1.8.1</span> Port Configuration
+(Configuration-Driven)</h3>
+<p><strong>All port configuration is handled via config files - no code
+changes required!</strong></p>
+<h4 data-number="1.8.1.1" id="development-mode-default"><span
+class="header-section-number">1.8.1.1</span> Development Mode
+(default)</h4>
 <ul>
-<li><strong>Development</strong>: http://localhost:8000 (both API and
-web interface)</li>
-<li><strong>Production</strong>: Consider using a reverse proxy
-(nginx/Apache) to handle port 443 (HTTPS)</li>
+<li>GenHook reads <code>backend/config/app-config.ini</code></li>
+<li>Default port: 8000 (HTTP)</li>
+<li>Access: http://localhost:8000</li>
+</ul>
+<h4 data-number="1.8.1.2" id="production-mode-options"><span
+class="header-section-number">1.8.1.2</span> Production Mode
+Options</h4>
+<p><strong>Option 1: Direct HTTPS (Port 443)</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create backend/config/app-config.prod.ini</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[server]</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">host </span><span class="ot">=</span><span class="st"> 0.0.0.0</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="dt">port </span><span class="ot">=</span><span class="st"> </span><span class="dv">443</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dt">reload </span><span class="ot">=</span><span class="st"> </span><span class="kw">false</span></span></code></pre></div>
+<p><strong>Option 2: Reverse Proxy (Recommended)</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep default port 8000 in app-config.ini</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Use nginx/Apache to proxy port 443 → 8000</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">[server]</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dt">host </span><span class="ot">=</span><span class="st"> 0.0.0.0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="dt">port </span><span class="ot">=</span><span class="st"> </span><span class="dv">8000</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="dt">reload </span><span class="ot">=</span><span class="st"> </span><span class="kw">false</span></span></code></pre></div>
+<p><strong>Option 3: Custom Port</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Any port you need</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">[server]</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="dt">host </span><span class="ot">=</span><span class="st"> 0.0.0.0</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dt">port </span><span class="ot">=</span><span class="st"> 9000  # or any port</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">reload </span><span class="ot">=</span><span class="st"> </span><span class="kw">false</span></span></code></pre></div>
+<h4 data-number="1.8.1.3" id="port-configuration-logic"><span
+class="header-section-number">1.8.1.3</span> Port Configuration
+Logic</h4>
+<ol type="1">
+<li>If <code>app-config.prod.ini</code> exists → uses production
+config</li>
+<li>Otherwise → uses <code>app-config.ini</code> (development)</li>
+<li>GenHook automatically detects and uses the appropriate config</li>
+<li><strong>No code modification ever required</strong></li>
+</ol>
+<h4 data-number="1.8.1.4" id="endpoint-access"><span
+class="header-section-number">1.8.1.4</span> Endpoint Access</h4>
+<ul>
 <li><strong>API Endpoints</strong>: <code>/webhook/{service}</code> for
 webhook reception</li>
 <li><strong>Web Interface</strong>: <code>/config</code> for
 configuration management</li>
 <li><strong>Health Check</strong>: <code>/health</code> for
 monitoring</li>
+<li><strong>API Documentation</strong>: <code>/docs</code> for FastAPI
+swagger docs</li>
 </ul>
 <h3 data-number="1.8.2" id="aws-deployment-considerations"><span
 class="header-section-number">1.8.2</span> AWS Deployment
@@ -707,14 +756,14 @@ class="header-section-number">1.8.3</span> Reverse Proxy Configuration
 <h3 data-number="1.8.4" id="environment-variables-for-production"><span
 class="header-section-number">1.8.4</span> Environment Variables for
 Production</h3>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set in production environment</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">GENHOOK_ENV</span><span class="op">=</span>production</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_API_URL</span><span class="op">=</span>https://your-sl1-instance.com/api/alert</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_USERNAME</span><span class="op">=</span>your_sl1_user</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_PASSWORD</span><span class="op">=</span>your_sl1_password</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="va">WEB_INTERFACE_ENABLED</span><span class="op">=</span>true</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="va">AUTO_RESTART_SERVICE</span><span class="op">=</span>true</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set in production environment</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">GENHOOK_ENV</span><span class="op">=</span>production</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_API_URL</span><span class="op">=</span>https://your-sl1-instance.com/api/alert</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_USERNAME</span><span class="op">=</span>your_sl1_user</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="va">SL1_PASSWORD</span><span class="op">=</span>your_sl1_password</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="va">WEB_INTERFACE_ENABLED</span><span class="op">=</span>true</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="va">AUTO_RESTART_SERVICE</span><span class="op">=</span>true</span></code></pre></div>
 <h3 data-number="1.8.5" id="configuration-files-for-production"><span
 class="header-section-number">1.8.5</span> Configuration Files for
 Production</h3>

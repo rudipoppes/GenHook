@@ -167,4 +167,15 @@ async def receive_webhook(service: str, request: Request, response: Response):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    
+    # Load configuration to get server settings
+    config = get_config()
+    server_config = config['server'] if 'server' in config else {}
+    
+    # Get host and port from config
+    host = server_config.get('host', '0.0.0.0')
+    port = int(server_config.get('port', 8000))
+    reload = server_config.getboolean('reload', True) if 'reload' in server_config else True
+    
+    logger.info(f"🚀 Starting GenHook server on {host}:{port}")
+    uvicorn.run("main:app", host=host, port=port, reload=reload)

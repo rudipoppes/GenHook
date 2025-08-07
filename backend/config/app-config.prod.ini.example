@@ -1,0 +1,45 @@
+# GenHook Production Configuration Example
+# Copy this file to app-config.prod.ini and customize for production deployment
+# This file demonstrates how to configure GenHook to run directly on port 443
+
+[server]
+# Set to 0.0.0.0 to accept connections from any IP
+host = 0.0.0.0
+# Set to 443 for direct HTTPS, or keep 8000 for reverse proxy setup
+port = 443
+# Set to false in production for better performance
+reload = false
+
+[sl1]
+# Your production SL1 server API endpoint
+api_url = https://your-sl1-server.com/api/alert
+# Your SL1 credentials (consider using environment variables for security)
+username = your_sl1_username
+password = your_sl1_password
+# Timeout for SL1 API calls (seconds)
+timeout = 30
+# Number of retry attempts for failed SL1 API calls
+retry_attempts = 3
+
+[logging]
+# Production logging level (INFO, WARNING, ERROR)
+level = INFO
+# Log format string
+format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+# Log file location (ensure GenHook has write permissions)
+file = /var/log/genhook.log
+
+[threading]
+# Increase for high-volume production environments
+max_workers = 100
+# Larger queue for handling traffic spikes
+queue_size = 20000
+# Timeout for processing individual webhooks (seconds)
+processing_timeout = 30
+
+# Notes:
+# - To use this config: cp app-config.prod.ini.example app-config.prod.ini
+# - GenHook automatically uses .prod.ini if it exists
+# - For port 443: ensure SSL certificates are properly configured
+# - For reverse proxy: keep port as 8000 and configure nginx/Apache
+# - Update SL1 credentials with your actual production values

@@ -298,12 +298,56 @@ log_rotation = daily
 
 ## Production Deployment
 
-### Port Configuration
-- **Development**: http://localhost:8000 (both API and web interface)
-- **Production**: Consider using a reverse proxy (nginx/Apache) to handle port 443 (HTTPS)
+### Port Configuration (Configuration-Driven)
+
+**All port configuration is handled via config files - no code changes required!**
+
+#### Development Mode (default)
+- GenHook reads `backend/config/app-config.ini`
+- Default port: 8000 (HTTP)
+- Access: http://localhost:8000
+
+#### Production Mode Options
+
+**Option 1: Direct HTTPS (Port 443)**
+```ini
+# Create backend/config/app-config.prod.ini
+[server]
+host = 0.0.0.0
+port = 443
+reload = false
+```
+
+**Option 2: Reverse Proxy (Recommended)**
+```ini
+# Keep default port 8000 in app-config.ini
+# Use nginx/Apache to proxy port 443 → 8000
+[server]
+host = 0.0.0.0
+port = 8000
+reload = false
+```
+
+**Option 3: Custom Port**
+```ini
+# Any port you need
+[server]
+host = 0.0.0.0
+port = 9000  # or any port
+reload = false
+```
+
+#### Port Configuration Logic
+1. If `app-config.prod.ini` exists → uses production config
+2. Otherwise → uses `app-config.ini` (development)
+3. GenHook automatically detects and uses the appropriate config
+4. **No code modification ever required**
+
+#### Endpoint Access
 - **API Endpoints**: `/webhook/{service}` for webhook reception
 - **Web Interface**: `/config` for configuration management
 - **Health Check**: `/health` for monitoring
+- **API Documentation**: `/docs` for FastAPI swagger docs
 
 ### AWS Deployment Considerations
 - **Application Load Balancer**: Route traffic to GenHook instances

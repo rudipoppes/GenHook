@@ -32,7 +32,9 @@
       "Bash(./generate_ssl_pdf.sh:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(./generate_web_interface_pdf.sh:*)"
+      "Bash(./generate_web_interface_pdf.sh:*)",
+      "Bash(./generate_production_docs.sh:*)",
+      "Bash(./generate_html_docs.sh:*)"
     ],
     "deny": []
   }
