@@ -264,11 +264,26 @@
         let analyzedPayload = null;
         let selectedFieldsList = [];
         let currentWebhookType = '';
+        let webConfig = { restart_on_save: false }; // Default fallback
 
-        // Load configurations on page load
+        // Load configurations and web config on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadWebConfig();
             loadConfigurations();
         });
+
+        async function loadWebConfig() {
+            try {
+                const response = await fetch('/api/web-config');
+                if (response.ok) {
+                    webConfig = await response.json();
+                } else {
+                    console.warn('Failed to load web config, using defaults');
+                }
+            } catch (error) {
+                console.warn('Error loading web config:', error);
+            }
+        }
 
         function showNotification(title, message, type = 'info') {
             const toast = document.getElementById('notificationToast');
@@ -495,7 +510,6 @@
             if (editPayload) {
                 try {
                     testPayload = JSON.parse(editPayload);
-                    console.log('Using manual test payload from textarea');
                 } catch (e) {
                     showNotification('Error', 'Invalid JSON in test payload', 'error');
                     return;
@@ -504,7 +518,6 @@
             // Otherwise, use the original analyzed payload (if it has real data)
             else if (analyzedPayload && analyzedPayload.original_payload && Object.keys(analyzedPayload.original_payload).length > 0) {
                 testPayload = analyzedPayload.original_payload;
-                console.log('Using original analyzed payload');
             } 
             // No payload available
             else {
@@ -519,8 +532,6 @@
                     selected_fields: selectedFieldsList,
                     message_template: template
                 };
-                
-                console.log('Test configuration request data:', requestData);
                 
                 const response = await fetch('/api/test-config', {
                     method: 'POST',
@@ -572,7 +583,7 @@
                         webhook_type: currentWebhookType,
                         config_line: configLine,
                         create_backup: true,
-                        restart_service: false
+                        restart_service: webConfig.restart_on_save
                     })
                 });
                 
@@ -628,8 +639,6 @@
             
             // Reset to step 1
             showStep(1);
-            
-            console.log('Wizard completely reset');
         }
 
         async function loadConfigurations() {
@@ -704,12 +713,8 @@
                     updatePreview();
                     
                     const toggleBtn = document.getElementById('toggleTestPayloadBtn');
-                    console.log('Toggle button element:', toggleBtn);
                     if (toggleBtn) {
                         toggleBtn.style.display = 'inline-block';
-                        console.log('Button display set to inline-block');
-                    } else {
-                        console.error('toggleTestPayloadBtn element not found!');
                     }
                     showNotification('Edit Mode', `Editing configuration for '${webhookType}'`, 'info');
                 } else {

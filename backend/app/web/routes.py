@@ -333,3 +333,17 @@ async def delete_config(webhook_type: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/web-config")
+async def get_web_config():
+    """Get web interface configuration settings."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    return {
+        "restart_on_save": web_config.restart_on_save,
+        "auto_restart_service": web_config.auto_restart_service,
+        "backup_configs": web_config.backup_configs,
+        "enable_config_validation": web_config.enable_config_validation
+    }

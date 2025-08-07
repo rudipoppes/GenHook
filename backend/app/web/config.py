@@ -25,6 +25,7 @@ class WebConfig(BaseModel):
     
     # Feature flags
     auto_restart_service: bool = True
+    restart_on_save: bool = True
     backup_configs: bool = True
     backup_retention_days: int = 30
     enable_config_validation: bool = True
@@ -97,6 +98,7 @@ def load_web_config(config_path: Optional[str] = None) -> WebConfig:
             features_section = config['features']
             config_dict.update({
                 'auto_restart_service': features_section.getboolean('auto_restart_service', True),
+                'restart_on_save': features_section.getboolean('restart_on_save', True),
                 'backup_configs': features_section.getboolean('backup_configs', True),
                 'backup_retention_days': features_section.getint('backup_retention_days', 30),
                 'enable_config_validation': features_section.getboolean('enable_config_validation', True),
