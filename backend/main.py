@@ -24,10 +24,22 @@ async def receive_webhook(service: str, request: Request, response: Response):
     Generic webhook endpoint that processes any configured webhook type
     """
     try:
+        # Check for completely empty body first
+        body = await request.body()
+        if not body:
+            logger.info(f"Empty body received for {service} webhook - returning 202 Accepted")
+            response.status_code = 202
+            return {
+                "status": "accepted",
+                "message": "Empty body received and ignored",
+                "service": service
+            }
+        
+        # Parse JSON from non-empty body
         payload = await request.json()
         logger.info(f"Received {service} webhook")
         
-        # Handle empty or None payload
+        # Handle empty JSON payload
         if not payload:
             logger.info(f"Empty payload received for {service} webhook - returning 202 Accepted")
             response.status_code = 202
@@ -116,15 +128,6 @@ async def receive_webhook(service: str, request: Request, response: Response):
             
     except ValueError as e:
         logger.error(f"Invalid JSON in {service} webhook: {e}")
-        # If it's just empty body, return accepted instead of error
-        if "Expecting value" in str(e):
-            logger.info(f"Empty body received for {service} webhook - returning 202 Accepted")
-            response.status_code = 202
-            return {
-                "status": "accepted", 
-                "message": "Empty body received and ignored",
-                "service": service
-            }
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         logger.error(f"Error processing {service} webhook: {e}")
