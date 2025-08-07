@@ -170,12 +170,11 @@ if __name__ == "__main__":
     
     # Load configuration to get server settings
     config = get_config()
-    server_config = config['server'] if 'server' in config else {}
     
-    # Get host and port from config
-    host = server_config.get('host', '0.0.0.0')
-    port = int(server_config.get('port', 8000))
-    reload = server_config.getboolean('reload', True) if 'reload' in server_config else True
+    # Get server configuration values
+    host = config.get('server', 'host', fallback='0.0.0.0')
+    port = config.getint('server', 'port', fallback=8000)
+    reload = config.getboolean('server', 'reload', fallback=True)
     
     logger.info(f"🚀 Starting GenHook server on {host}:{port}")
     uvicorn.run("main:app", host=host, port=port, reload=reload)
