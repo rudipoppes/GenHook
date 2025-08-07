@@ -673,7 +673,14 @@
                     updateAvailableVariables();
                     updatePreview();
                     
-                    document.getElementById('toggleTestPayloadBtn').style.display = 'inline-block';
+                    const toggleBtn = document.getElementById('toggleTestPayloadBtn');
+                    console.log('Toggle button element:', toggleBtn);
+                    if (toggleBtn) {
+                        toggleBtn.style.display = 'inline-block';
+                        console.log('Button display set to inline-block');
+                    } else {
+                        console.error('toggleTestPayloadBtn element not found!');
+                    }
                     showNotification('Edit Mode', `Editing configuration for '${webhookType}'`, 'info');
                 } else {
                     showNotification('Error', 'Failed to load configuration', 'error');
