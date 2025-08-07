@@ -27,6 +27,15 @@ async def receive_webhook(service: str, request: Request):
         payload = await request.json()
         logger.info(f"Received {service} webhook")
         
+        # Handle empty or None payload
+        if not payload:
+            logger.info(f"Empty payload received for {service} webhook - returning 200 OK")
+            return {
+                "status": "success",
+                "message": "Empty payload received and ignored",
+                "service": service
+            }
+        
         webhook_config = get_webhook_config()
         
         if service not in webhook_config:
@@ -106,6 +115,14 @@ async def receive_webhook(service: str, request: Request):
             
     except ValueError as e:
         logger.error(f"Invalid JSON in {service} webhook: {e}")
+        # If it's just empty body, return success instead of error
+        if "Expecting value" in str(e):
+            logger.info(f"Empty body received for {service} webhook - returning 200 OK")
+            return {
+                "status": "success", 
+                "message": "Empty body received and ignored",
+                "service": service
+            }
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         logger.error(f"Error processing {service} webhook: {e}")
