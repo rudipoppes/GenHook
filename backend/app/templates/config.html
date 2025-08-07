@@ -507,15 +507,19 @@
             }
             
             try {
+                const requestData = {
+                    webhook_type: currentWebhookType,
+                    test_payload: testPayload,
+                    selected_fields: selectedFieldsList,
+                    message_template: template
+                };
+                
+                console.log('Test configuration request data:', requestData);
+                
                 const response = await fetch('/api/test-config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        webhook_type: currentWebhookType,
-                        test_payload: testPayload,
-                        selected_fields: selectedFieldsList,
-                        message_template: template
-                    })
+                    body: JSON.stringify(requestData)
                 });
                 
                 const result = await response.json();
