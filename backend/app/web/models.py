@@ -77,7 +77,6 @@ class ConfigSaveRequest(BaseModel):
     webhook_type: str = Field(..., description="Webhook type name")
     config_line: str = Field(..., description="Configuration line to save")
     create_backup: bool = Field(True, description="Whether to create backup before saving")
-    restart_service: bool = Field(True, description="Whether to restart service after saving")
 
 
 class ConfigSaveResponse(BaseModel):

@@ -342,32 +342,3 @@ class ConfigManager:
         except Exception as e:
             raise
     
-    def restart_service(self) -> Tuple[bool, Optional[str]]:
-        """
-        Restart the GenHook service.
-        
-        Returns:
-            Tuple of (success, error_message)
-        """
-        if not self.config.auto_restart_service:
-            return True, None
-        
-        try:
-            # Run the restart command asynchronously to avoid deadlock
-            logger.info(f"Scheduling service restart with command: {self.config.restart_command}")
-            
-            # Use Popen instead of run to avoid blocking the current process
-            process = subprocess.Popen(
-                shlex.split(self.config.restart_command),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            
-            # Don't wait for completion to avoid deadlock - let it run in background
-            logger.info("Service restart command initiated (running in background)")
-            return True, None
-                
-        except Exception as e:
-            logger.error(f"Restart error: {type(e).__name__}: {str(e)}")
-            return False, f"Restart error: {type(e).__name__}: {str(e)}"

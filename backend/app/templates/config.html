@@ -264,7 +264,7 @@
         let analyzedPayload = null;
         let selectedFieldsList = [];
         let currentWebhookType = '';
-        let webConfig = { restart_on_save: false }; // Default fallback
+        let webConfig = {}; // Web interface configuration
 
         // Load configurations and web config on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -582,8 +582,7 @@
                     body: JSON.stringify({
                         webhook_type: currentWebhookType,
                         config_line: configLine,
-                        create_backup: true,
-                        restart_service: webConfig.restart_on_save
+                        create_backup: true
                     })
                 });
                 

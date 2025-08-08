@@ -24,17 +24,13 @@ class WebConfig(BaseModel):
     session_timeout: int = 3600
     
     # Feature flags
-    auto_restart_service: bool = True
-    restart_on_save: bool = True
     backup_configs: bool = True
     backup_retention_days: int = 30
     enable_config_validation: bool = True
     enable_live_preview: bool = True
     
     # Service integration
-    supervisor_program_name: str = "genhook"
     config_file_path: str = "config/webhook-config.ini"
-    restart_command: str = "supervisorctl restart genhook"
     backup_directory: str = "backups/configs/"
     
     # UI settings
@@ -105,8 +101,6 @@ def load_web_config(config_path: Optional[str] = None) -> WebConfig:
         if 'features' in config:
             features_section = config['features']
             config_dict.update({
-                'auto_restart_service': features_section.getboolean('auto_restart_service', True),
-                'restart_on_save': features_section.getboolean('restart_on_save', True),
                 'backup_configs': features_section.getboolean('backup_configs', True),
                 'backup_retention_days': features_section.getint('backup_retention_days', 30),
                 'enable_config_validation': features_section.getboolean('enable_config_validation', True),
@@ -117,9 +111,7 @@ def load_web_config(config_path: Optional[str] = None) -> WebConfig:
         if 'service' in config:
             service_section = config['service']
             config_dict.update({
-                'supervisor_program_name': service_section.get('supervisor_program_name', 'genhook'),
                 'config_file_path': service_section.get('config_file_path', 'config/webhook-config.ini'),
-                'restart_command': service_section.get('restart_command', 'supervisorctl restart genhook'),
                 'backup_directory': service_section.get('backup_directory', 'backups/configs/'),
             })
         

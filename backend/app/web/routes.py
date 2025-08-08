@@ -210,27 +210,11 @@ async def save_config(request: ConfigSaveRequest):
                 error_message=error_msg
             )
         
-        # Restart service if requested
-        service_restarted = False
-        if request.restart_service:
-            restart_success, restart_error = config_manager.restart_service()
-            if restart_success:
-                service_restarted = True
-            else:
-                # Configuration was saved but service restart failed
-                return ConfigSaveResponse(
-                    success=False,
-                    webhook_type=request.webhook_type,
-                    backup_file=backup_file,
-                    service_restarted=False,
-                    error_message=f"Config saved but service restart failed: {restart_error}"
-                )
-        
         return ConfigSaveResponse(
             success=True,
             webhook_type=request.webhook_type,
             backup_file=backup_file,
-            service_restarted=service_restarted,
+            service_restarted=False,  # No restart needed - config is read dynamically
             error_message=None
         )
         
@@ -323,10 +307,6 @@ async def delete_config(webhook_type: str):
         with open(config_file_path, 'w') as f:
             config.write(f)
         
-        # Restart service if configured (same logic as save)
-        if web_config.restart_on_save:
-            config_manager.restart_service()
-        
         return {"success": True, "message": f"Webhook type '{webhook_type}' deleted"}
         
     except HTTPException:
@@ -342,8 +322,7 @@ async def get_web_config():
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     return {
-        "restart_on_save": web_config.restart_on_save,
-        "auto_restart_service": web_config.auto_restart_service,
         "backup_configs": web_config.backup_configs,
-        "enable_config_validation": web_config.enable_config_validation
+        "enable_config_validation": web_config.enable_config_validation,
+        "enable_live_preview": web_config.enable_live_preview
     }

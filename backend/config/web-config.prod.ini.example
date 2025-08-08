@@ -14,17 +14,13 @@ max_payload_size = 10MB
 session_timeout = 3600
 
 [features]
-auto_restart_service = true
-restart_on_save = true
 backup_configs = true
 backup_retention_days = 30
 enable_config_validation = true
 enable_live_preview = true
 
 [service]
-supervisor_program_name = genhook
 config_file_path = config/webhook-config.ini
-restart_command = sudo supervisorctl restart genhook
 backup_directory = backups/configs/
 
 [ui]
@@ -41,5 +37,5 @@ enable_access_log = true
 # Notes:
 # - To use this config: cp web-config.prod.ini.example web-config.prod.ini
 # - GenHook automatically uses .prod.ini if it exists
-# - Production settings: restart_on_save = true, sudo restart command
-# - Development uses web-config.ini with restart_on_save = false
+# - Configuration changes take effect immediately (no restart required)
+# - Backup configurations are automatically created before changes
