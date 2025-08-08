@@ -353,27 +353,21 @@ class ConfigManager:
             return True, None
         
         try:
-            # Run the restart command
-            logger.info(f"Attempting to restart service with command: {self.config.restart_command}")
+            # Run the restart command asynchronously to avoid deadlock
+            logger.info(f"Scheduling service restart with command: {self.config.restart_command}")
             
-            result = subprocess.run(
+            # Use Popen instead of run to avoid blocking the current process
+            process = subprocess.Popen(
                 shlex.split(self.config.restart_command),
-                capture_output=True,
-                text=True,
-                timeout=30
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
             
-            if result.returncode == 0:
-                logger.info("Service restart successful")
-                return True, None
-            else:
-                error_msg = f"Restart failed with code {result.returncode}: {result.stderr or result.stdout}"
-                logger.error(error_msg)
-                return False, error_msg
+            # Don't wait for completion to avoid deadlock - let it run in background
+            logger.info("Service restart command initiated (running in background)")
+            return True, None
                 
-        except subprocess.TimeoutExpired:
-            logger.error("Restart command timed out after 30 seconds")
-            return False, "Restart command timed out"
         except Exception as e:
             logger.error(f"Restart error: {type(e).__name__}: {str(e)}")
             return False, f"Restart error: {type(e).__name__}: {str(e)}"
