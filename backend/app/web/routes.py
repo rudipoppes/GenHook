@@ -323,8 +323,8 @@ async def delete_config(webhook_type: str):
         with open(config_file_path, 'w') as f:
             config.write(f)
         
-        # Restart service if configured
-        if web_config.auto_restart_service:
+        # Restart service if configured (same logic as save)
+        if web_config.restart_on_save:
             config_manager.restart_service()
         
         return {"success": True, "message": f"Webhook type '{webhook_type}' deleted"}
