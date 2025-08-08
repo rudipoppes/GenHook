@@ -350,19 +350,30 @@ class ConfigManager:
         
         try:
             # Run the restart command
+            import shlex
+            from app.core.logging import get_logger
+            logger = get_logger(__name__)
+            
+            logger.info(f"Attempting to restart service with command: {self.config.restart_command}")
+            
             result = subprocess.run(
-                self.config.restart_command.split(),
+                shlex.split(self.config.restart_command),
                 capture_output=True,
                 text=True,
                 timeout=30
             )
             
             if result.returncode == 0:
+                logger.info("Service restart successful")
                 return True, None
             else:
-                return False, f"Restart failed: {result.stderr}"
+                error_msg = f"Restart failed with code {result.returncode}: {result.stderr or result.stdout}"
+                logger.error(error_msg)
+                return False, error_msg
                 
         except subprocess.TimeoutExpired:
+            logger.error("Restart command timed out after 30 seconds")
             return False, "Restart command timed out"
         except Exception as e:
-            return False, f"Restart error: {str(e)}"
+            logger.error(f"Restart error: {type(e).__name__}: {str(e)}")
+            return False, f"Restart error: {type(e).__name__}: {str(e)}"
