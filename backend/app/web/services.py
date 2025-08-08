@@ -3,6 +3,7 @@ Web interface business logic and services.
 """
 import json
 import os
+import shlex
 import shutil
 import subprocess
 from datetime import datetime
@@ -10,8 +11,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ..core.extractor import FieldExtractor
+from ..core.logging import get_logger
 from .config import get_web_config
 from .models import FieldInfo, PayloadAnalysisResponse, ConfigGenerationResponse
+
+logger = get_logger(__name__)
 
 
 class PayloadAnalyzer:
@@ -350,10 +354,6 @@ class ConfigManager:
         
         try:
             # Run the restart command
-            import shlex
-            from app.core.logging import get_logger
-            logger = get_logger(__name__)
-            
             logger.info(f"Attempting to restart service with command: {self.config.restart_command}")
             
             result = subprocess.run(
