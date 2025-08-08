@@ -2,6 +2,7 @@
 Web interface business logic and services.
 """
 import json
+import logging
 import os
 import shlex
 import shutil
@@ -11,11 +12,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ..core.extractor import FieldExtractor
-from ..core.logging import get_logger
 from .config import get_web_config
 from .models import FieldInfo, PayloadAnalysisResponse, ConfigGenerationResponse
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class PayloadAnalyzer:
