@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import logging
-import json
 import os
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from app.services.sl1_service import sl1_service
 from app.web import web_router
 from app.web.config import get_web_config
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="GenHook API", version="1.0.0")
@@ -71,10 +70,6 @@ async def receive_webhook(service: str, request: Request, response: Response):
         # Parse JSON from non-empty body
         payload = await request.json()
         logger.info(f"Received {service} webhook")
-        
-        # Debug logging for payload inspection
-        logger.debug(f"Payload type: {type(payload)}")
-        logger.debug(f"Payload content: {json.dumps(payload, indent=2) if isinstance(payload, dict) else str(payload)[:500]}")
         
         # Handle empty JSON payload
         if not payload:
