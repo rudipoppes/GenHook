@@ -60,9 +60,17 @@ def load_web_config(config_path: Optional[str] = None) -> WebConfig:
         WebConfig instance with loaded settings.
     """
     if config_path is None:
-        # Default path relative to backend directory
+        # Auto-detect environment: production config takes precedence if it exists
         backend_dir = Path(__file__).parent.parent.parent
-        config_path = str(backend_dir / "config" / "web-config.ini")
+        prod_config_path = backend_dir / "config" / "web-config.prod.ini"
+        dev_config_path = backend_dir / "config" / "web-config.ini"
+        
+        if prod_config_path.exists():
+            config_path = str(prod_config_path)
+            print(f"✅ Loaded web interface config from: {prod_config_path}")
+        else:
+            config_path = str(dev_config_path)
+            print(f"✅ Loaded web interface config from: {dev_config_path}")
     
     config = ConfigParser()
     
