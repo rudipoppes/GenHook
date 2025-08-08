@@ -73,8 +73,8 @@ async def receive_webhook(service: str, request: Request, response: Response):
         
         # Handle empty JSON payload
         if not payload:
-            logger.info(f"Empty payload received for {service} webhook - returning 202 Accepted")
-            response.status_code = 202
+            logger.info(f"Empty payload received for {service} webhook - returning 200 OK")
+            response.status_code = 200
             return {
                 "status": "accepted",
                 "message": "Empty payload received and ignored",

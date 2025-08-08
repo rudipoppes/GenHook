@@ -42,7 +42,7 @@
 - [x] **Production Integration**: Web interface integrated with main FastAPI application  
 - [x] **Configuration-Driven**: All settings externalized to config files
 - [x] **Backup System**: Automatic configuration backups before changes
-- [x] **Service Restart**: Configurable automatic service restart capability
+- [x] **Dynamic Configuration Loading**: Configuration changes take effect immediately without restarts
 - [x] **Health Checks**: `/health` endpoint for monitoring
 - [x] **API Documentation**: FastAPI auto-generated docs at `/docs`
 
@@ -85,7 +85,7 @@
 
 ### Configuration
 - [ ] **SL1 Credentials**: Production SL1 API credentials configured
-- [ ] **Web Config**: `auto_restart_service = true` in production
+- [ ] **Web Config**: Dynamic configuration loading enabled (default)
 - [ ] **Webhook Configurations**: Production webhook patterns migrated
 - [ ] **Environment Variables**: All production environment variables set
 - [ ] **Backup Directory**: Backup storage location configured

@@ -385,8 +385,8 @@ services:
    timeout_seconds = 30
 
    [features]
-   auto_restart_service = true
    backup_configs = true
+   # Dynamic configuration loading enabled - no restart needed
 
    [paths]
    config_file_path = config/webhook-config.ini

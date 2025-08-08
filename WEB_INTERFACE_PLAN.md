@@ -49,17 +49,16 @@ max_payload_size = 10MB
 session_timeout = 3600
 
 [features]
-auto_restart_service = true
 backup_configs = true
 backup_retention_days = 30
 enable_config_validation = true
 enable_live_preview = true
+# Dynamic configuration loading enabled by default - no restart needed
 
 [service]
-supervisor_program_name = genhook
 config_file_path = config/webhook-config.ini
-restart_command = supervisorctl restart genhook
 backup_directory = backups/configs/
+# Configuration changes take effect immediately without service restart
 
 [ui]
 theme = default

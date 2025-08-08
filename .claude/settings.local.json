@@ -34,7 +34,9 @@
       "Bash(git merge:*)",
       "Bash(./generate_web_interface_pdf.sh:*)",
       "Bash(./generate_production_docs.sh:*)",
-      "Bash(./generate_html_docs.sh:*)"
+      "Bash(./generate_html_docs.sh:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

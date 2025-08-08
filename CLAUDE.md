@@ -11,6 +11,7 @@ GenHook is a configuration-driven, multi-threaded webhook receiver that:
 
 ### Key Features
 - **Configuration-Driven**: No code changes needed for new webhook types
+- **Dynamic Configuration Loading**: Configuration changes take effect immediately without service restarts
 - **Multi-Threaded**: Handle thousands of concurrent webhooks
 - **Template-Based Messaging**: Flexible message generation
 - **SL1 Integration**: Direct API integration with default values
@@ -90,19 +91,19 @@ GenHook includes a comprehensive web-based configuration interface that eliminat
 5. Select the fields you want to extract
 6. Create a message template using variables like `$field.name$`
 7. Click "Test Config" to verify the configuration works
-8. Click "Save Configuration" to add it to your webhook-config.ini
+8. Click "Save Configuration" to add it to your webhook-config.ini (takes effect immediately)
 
 #### Editing Existing Configurations:
 1. Click the edit button (pencil icon) on any configuration in the table
 2. Modify the message template as needed
 3. Click "Add Test Payload" to provide sample data for testing
 4. Paste a JSON payload and click "Test Config"
-5. Click "Save Configuration" to update the existing configuration
+5. Click "Save Configuration" to update the existing configuration (takes effect immediately)
 
 ### Configuration File Integration
 - Configurations are saved to `backend/config/webhook-config.ini`
 - Automatic backup creation in `backend/config/backups/`
-- Service restart capability (configurable)
+- **Dynamic Loading**: Changes take effect immediately without service restarts
 - No manual file editing required
 
 ### Web Interface Configuration
@@ -115,8 +116,9 @@ max_analysis_depth = 3
 timeout_seconds = 30
 
 [features]
-auto_restart_service = false  # Set to true in production
 backup_configs = true
+enable_config_validation = true
+enable_live_preview = true
 ```
 
 ## Supported Webhook Sources
@@ -191,6 +193,28 @@ meraki_max_concurrent = 25
 - **Dead Letter**: Failed processing queue
 
 ## Configuration System
+
+### Dynamic Configuration Loading
+
+GenHook implements **dynamic configuration loading** - configuration changes take effect immediately without requiring service restarts. This provides significant operational benefits:
+
+#### Key Benefits
+- **Zero Downtime Configuration Updates**: Modify webhook configurations while the service continues processing webhooks
+- **Instant Testing**: Test new webhook configurations immediately after saving
+- **Simplified Operations**: No need to restart services, coordinate downtime, or use `supervisorctl restart`
+- **Production-Safe**: Configurations are validated and loaded atomically to prevent partial updates
+
+#### How It Works
+1. **Configuration Read on Demand**: Each webhook request reads the latest configuration from disk
+2. **Atomic File Operations**: Configuration files are updated atomically to prevent partial reads
+3. **Automatic Backup**: Previous configurations are backed up before changes
+4. **Real-Time Validation**: Configurations are validated before being applied
+
+#### What This Means for Operations
+- **Web Interface**: Save configurations and they take effect immediately
+- **Manual Config Edits**: Direct file edits to `webhook-config.ini` are picked up on next webhook
+- **Production Deployments**: Configuration updates without service interruption
+- **Development Workflow**: Faster iteration when testing new webhook configurations
 
 ### Template Variables
 - **Simple Substitution**: `$field_name$`
@@ -288,6 +312,7 @@ log_rotation = daily
 - ✅ Enhanced field extraction engine with nested pattern parsing
 - ✅ Automatic configuration backup and file management
 - ✅ Bootstrap 5 responsive web interface at http://localhost:8000/config
+- ✅ **Dynamic Configuration Loading**: No service restarts required
 - ✅ Production-ready with clean codebase and error handling
 
 🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
@@ -383,12 +408,11 @@ SL1_API_URL=https://your-sl1-instance.com/api/alert
 SL1_USERNAME=your_sl1_user
 SL1_PASSWORD=your_sl1_password
 WEB_INTERFACE_ENABLED=true
-AUTO_RESTART_SERVICE=true
 ```
 
 ### Configuration Files for Production
-- Update `backend/config/web-config.ini` to set `auto_restart_service = true`
 - Ensure `backend/config/webhook-config.ini` contains your webhook configurations
+- Configuration changes take effect immediately through dynamic loading
 - Backup configurations are stored in `backend/config/backups/`
 
 ### Security Checklist
@@ -448,7 +472,7 @@ A comprehensive web-based interface for configuring GenHook webhooks without man
 - **Live Preview**: Real-time message generation preview
 - **Template Builder**: Guided template creation with variable suggestions  
 - **Configuration Management**: Safe config updates with backup and rollback
-- **Service Integration**: Automated service restart after configuration changes
+- **Dynamic Loading**: Configuration changes take effect immediately without service restarts
 
 ### Architecture
 - **Framework**: FastAPI + Jinja2 templates + Vanilla JavaScript
@@ -475,7 +499,7 @@ backend/
 2. Paste JSON payload from webhook source
 3. Select fields using interactive tree interface
 4. Build message template with live preview
-5. Save configuration (auto-restarts service)
+5. Save configuration (takes effect immediately)
 6. Test with actual webhook
 
 ### Documentation

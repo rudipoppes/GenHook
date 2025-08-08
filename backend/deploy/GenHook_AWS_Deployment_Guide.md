@@ -32,6 +32,7 @@ Internet → AWS ALB/CloudFront → EC2 Instance → Nginx → GenHook App → S
 ### Key Features
 - **Multi-Service Support**: GitHub, Stripe, Slack, AWS webhooks
 - **Configuration-Driven**: No code changes for new webhook types
+- **Dynamic Configuration Loading**: Configuration changes take effect immediately without restarts
 - **Template-Based Messaging**: Flexible alert generation
 - **SL1 Integration**: Direct API integration with retry logic
 - **Production-Ready**: Nginx proxy, process management, logging
@@ -230,19 +231,53 @@ queue_size = 1000    # Small queue for MVP
 processing_timeout = 30
 ```
 
-### Step 2: Restart Services
+### Step 2: Verify Configuration Loading
 
 The application automatically detects and uses production configuration when `app-config.prod.ini` exists:
 
 ```bash
-# Restart GenHook service to use production configuration
-sudo supervisorctl restart genhook
+# Check service status
+sudo supervisorctl status genhook
 
 # Verify it's using production config (check logs)
 sudo supervisorctl tail genhook stdout
 # Should show: "✅ Using production config: /opt/genhook/backend/config/app-config.prod.ini"
+
+# Configuration changes are automatically loaded - no restart needed
 ```
 
+
+---
+
+## Dynamic Configuration Benefits for Production
+
+GenHook's **dynamic configuration loading** system provides significant advantages in production environments:
+
+### Zero-Downtime Configuration Updates
+- **Webhook configurations** can be modified while the service processes incoming webhooks
+- **No service interruption** when adding new webhook types or updating templates
+- **Instant activation** of configuration changes without coordination windows
+
+### Simplified Operations
+- **No more `supervisorctl restart genhook`** commands for configuration changes
+- **Reduced operational complexity** - fewer steps to deploy configuration updates
+- **Faster incident response** - quickly update webhook configurations during incidents
+
+### Production Safety
+- **Atomic configuration loading** prevents partial configuration states
+- **Automatic backup** of previous configurations before changes
+- **Configuration validation** before activation prevents service disruption
+
+### Development and Testing Benefits
+- **Rapid iteration** when testing new webhook integrations
+- **Immediate feedback** when using the web interface
+- **Simplified CI/CD** - configuration deployments don't require service coordination
+
+### How It Works in Production
+1. Update configurations via web interface or direct file editing
+2. Changes are validated and backed up automatically
+3. Next webhook request uses the new configuration
+4. No downtime, no restart coordination, no service interruption
 
 ---
 
@@ -431,7 +466,8 @@ Configuration:
     notifempty
     sharedscripts
     postrotate
-        supervisorctl restart genhook
+        # Configuration reloads automatically - no restart needed
+        # supervisorctl restart genhook  # Only needed for log rotation
     endscript
 }
 ```
@@ -681,9 +717,9 @@ grep -c "Successfully sent alert to SL1" /var/log/genhook/app.log
 - **Nginx Logs**: `/var/log/nginx/genhook_*.log`
 
 ### Emergency Procedures
-1. **Service restart**: `sudo supervisorctl restart genhook`
+1. **Service restart**: `sudo supervisorctl restart genhook` (only if service is unresponsive)
 2. **Full system restart**: `sudo reboot`
-3. **Rollback**: Restore from backup and restart services
+3. **Rollback**: Restore from backup (configurations load automatically)
 4. **Scale up**: Change instance type in AWS console
 
 ---
