@@ -59,8 +59,8 @@ async def receive_webhook(service: str, request: Request, response: Response):
         # Check for completely empty body first
         body = await request.body()
         if not body:
-            logger.info(f"Empty body received for {service} webhook - returning 202 Accepted")
-            response.status_code = 202
+            logger.info(f"Empty body received for {service} webhook - returning 200 OK")
+            response.status_code = 200
             return {
                 "status": "accepted",
                 "message": "Empty body received and ignored",
