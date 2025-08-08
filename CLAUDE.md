@@ -216,6 +216,14 @@ GenHook implements **dynamic configuration loading** - configuration changes tak
 - **Production Deployments**: Configuration updates without service interruption
 - **Development Workflow**: Faster iteration when testing new webhook configurations
 
+#### Important: What Still Requires Restart
+While webhook configurations are dynamic, the following changes still require a service restart:
+- **Code Changes**: Any modifications to Python files (main.py, services, etc.)
+- **App Configuration**: Changes to `app-config.ini` (server settings, ports, etc.)
+- **Dependencies**: Installing or updating Python packages
+- **Web Configuration**: Changes to `web-config.ini` settings
+- **Logging Levels**: Modifications to logging configuration
+
 ### Template Variables
 - **Simple Substitution**: `$field_name$`
 - **Nested Access**: `$object.subfield$`
@@ -302,7 +310,7 @@ log_rotation = daily
 - ✅ Template processing system
 - ✅ SL1 API integration with retry logic
 - ✅ HTTPS/SSL support for secure webhooks
-- ✅ Empty payload handling with 202 responses
+- ✅ Empty payload handling with 200 responses
 
 🎉 **Phase 5**: Web Configuration Interface (COMPLETED)
 - ✅ 3-step configuration wizard (payload analysis, field selection, template building)
