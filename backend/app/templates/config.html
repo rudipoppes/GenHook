@@ -721,9 +721,17 @@
             
             // Clear all form fields
             document.getElementById('webhookType').value = '';
-            document.getElementById('jsonPayload').value = '';
+            document.getElementById('sidebarJsonPayload').value = '';
             document.getElementById('messageTemplate').value = '';
-            document.getElementById('editTestPayload').value = '';
+            
+            // Clear sidebar selections
+            const sidebarWebhookTypeSelect = document.getElementById('sidebarWebhookTypeSelect');
+            const sidebarRecentPayloadSelect = document.getElementById('sidebarRecentPayloadSelect');
+            if (sidebarWebhookTypeSelect) sidebarWebhookTypeSelect.value = '';
+            if (sidebarRecentPayloadSelect) {
+                sidebarRecentPayloadSelect.value = '';
+                sidebarRecentPayloadSelect.disabled = true;
+            }
             
             // Clear all dynamic content areas
             document.getElementById('fieldsTree').innerHTML = '';
@@ -732,11 +740,8 @@
             document.getElementById('messagePreview').innerHTML = '<em class="text-muted">Preview will appear here...</em>';
             
             // Reset all button states
-            document.getElementById('analyzeBtn').disabled = true;
             document.getElementById('nextToTemplateBtn').disabled = true;
             document.getElementById('saveConfigBtn').disabled = true;
-            document.getElementById('toggleTestPayloadBtn').style.display = 'none';
-            document.getElementById('editModeTestPayload').classList.add('d-none');
             
             // Clear any selected checkboxes in fields tree
             const checkboxes = document.querySelectorAll('#fieldsTree input[type="checkbox"]');
