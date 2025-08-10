@@ -348,6 +348,132 @@ window.GenHook = {
     }
 };
 
+// Recent payload loading functions
+async function loadAvailableWebhookTypes() {
+    try {
+        const response = await fetch('/api/webhook-logs/types');
+        const data = await response.json();
+        
+        const select = document.getElementById('webhookTypeSelect');
+        if (select) {
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            // Add webhook types
+            if (data.success && data.webhook_types) {
+                data.webhook_types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load webhook types for recent payloads:', error);
+    }
+}
+
+async function loadRecentPayloads(webhookType) {
+    try {
+        const response = await fetch(`/api/webhook-logs/${webhookType}/recent?limit=10`);
+        const data = await response.json();
+        
+        const select = document.getElementById('recentPayloadSelect');
+        const loadBtn = document.getElementById('loadRecentBtn');
+        
+        if (select) {
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            if (data.success && data.payloads) {
+                data.payloads.forEach((entry, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    
+                    // Create a readable timestamp
+                    const timestamp = new Date(entry.timestamp).toLocaleString();
+                    const status = entry.processing_status || 'logged';
+                    
+                    option.textContent = `${timestamp} (${status})`;
+                    option.dataset.payload = JSON.stringify(entry.payload);
+                    select.appendChild(option);
+                });
+                
+                select.disabled = false;
+            } else {
+                select.disabled = true;
+            }
+            
+            loadBtn.disabled = true; // Will be enabled when a payload is selected
+        }
+    } catch (error) {
+        console.error('Error loading recent payloads:', error);
+        GenHook.ui.showNotification('Error loading recent payloads', 'error');
+    }
+}
+
+function loadRecentPayload() {
+    const payloadSelect = document.getElementById('recentPayloadSelect');
+    const selectedOption = payloadSelect.selectedOptions[0];
+    
+    if (selectedOption && selectedOption.dataset.payload) {
+        try {
+            const payload = JSON.parse(selectedOption.dataset.payload);
+            const textarea = document.getElementById('jsonPayload');
+            
+            if (textarea) {
+                textarea.value = JSON.stringify(payload, null, 2);
+                
+                // Trigger validation and enable analyze button
+                validateJson();
+                
+                GenHook.ui.showNotification('Recent payload loaded successfully', 'success');
+            }
+        } catch (error) {
+            console.error('Error loading payload:', error);
+            GenHook.ui.showNotification('Error loading payload', 'error');
+        }
+    }
+}
+
+// Event handlers for recent payload loading
+document.addEventListener('DOMContentLoaded', function() {
+    // Load available webhook types on page load
+    loadAvailableWebhookTypes();
+    
+    // Handle webhook type selection
+    const webhookTypeSelect = document.getElementById('webhookTypeSelect');
+    if (webhookTypeSelect) {
+        webhookTypeSelect.addEventListener('change', function() {
+            const webhookType = this.value;
+            if (webhookType) {
+                loadRecentPayloads(webhookType);
+            } else {
+                const payloadSelect = document.getElementById('recentPayloadSelect');
+                const loadBtn = document.getElementById('loadRecentBtn');
+                if (payloadSelect) payloadSelect.disabled = true;
+                if (loadBtn) loadBtn.disabled = true;
+            }
+        });
+    }
+    
+    // Handle recent payload selection
+    const recentPayloadSelect = document.getElementById('recentPayloadSelect');
+    if (recentPayloadSelect) {
+        recentPayloadSelect.addEventListener('change', function() {
+            const loadBtn = document.getElementById('loadRecentBtn');
+            if (loadBtn) {
+                loadBtn.disabled = !this.value;
+            }
+        });
+    }
+});
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('GenHook Configuration Interface loaded');

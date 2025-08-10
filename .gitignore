@@ -50,6 +50,10 @@ Thumbs.db
 *.log
 logs/
 
+# Webhook payload logs
+/backend/logs/webhooks/
+*.log.[0-9]
+
 # Frontend (will vary based on framework choice)
 node_modules/
 npm-debug.log*

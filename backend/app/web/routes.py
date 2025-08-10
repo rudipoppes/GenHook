@@ -22,6 +22,7 @@ from .models import (
     ConfigListResponse,
 )
 from .services import PayloadAnalyzer, ConfigGenerator, ConfigManager
+from ..services.webhook_logger import get_webhook_logger
 
 # Create router
 router = APIRouter()
@@ -331,3 +332,50 @@ async def get_web_config():
         "enable_config_validation": web_config.enable_config_validation,
         "enable_live_preview": web_config.enable_live_preview
     }
+
+
+@router.get("/api/webhook-logs/{webhook_type}/recent")
+async def get_recent_payloads(webhook_type: str, limit: int = 10):
+    """Get recent webhook payloads for a specific webhook type."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    # Validate limit
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+    
+    webhook_logger = get_webhook_logger()
+    if not webhook_logger or not webhook_logger.enabled:
+        raise HTTPException(status_code=503, detail="Webhook logging is disabled")
+    
+    try:
+        recent_payloads = webhook_logger.get_recent_payloads(webhook_type, limit)
+        return {
+            "success": True,
+            "webhook_type": webhook_type,
+            "payloads": recent_payloads,
+            "count": len(recent_payloads)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving payloads: {str(e)}")
+
+
+@router.get("/api/webhook-logs/types")
+async def get_available_webhook_types():
+    """Get list of webhook types that have logged payloads."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    webhook_logger = get_webhook_logger()
+    if not webhook_logger or not webhook_logger.enabled:
+        return {"success": True, "webhook_types": [], "count": 0}
+    
+    try:
+        webhook_types = webhook_logger.get_available_webhook_types()
+        return {
+            "success": True,
+            "webhook_types": webhook_types,
+            "count": len(webhook_types)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving webhook types: {str(e)}")

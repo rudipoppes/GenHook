@@ -37,7 +37,8 @@
       "Bash(./generate_html_docs.sh:*)",
       "Bash(pkill:*)",
       "Bash(kill:*)",
-      "Bash(echo \"# Check if the changes are in the file:\nsudo -u genhook grep -A 3 ''Empty payload received'' /path/to/GenHook/backend/main.py\n\n# Check if supervisor is using the right path:\nsudo supervisorctl status genhook\n\n# Check the running process:\nsudo ps aux | grep -E ''python.*main.py|uvicorn'' | grep -v grep\")"
+      "Bash(echo \"# Check if the changes are in the file:\nsudo -u genhook grep -A 3 ''Empty payload received'' /path/to/GenHook/backend/main.py\n\n# Check if supervisor is using the right path:\nsudo supervisorctl status genhook\n\n# Check the running process:\nsudo ps aux | grep -E ''python.*main.py|uvicorn'' | grep -v grep\")",
+      "Bash(claude --version)"
     ],
     "deny": []
   }

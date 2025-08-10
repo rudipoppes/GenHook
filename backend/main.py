@@ -9,6 +9,7 @@ from pathlib import Path
 from app.core.config import get_config, get_webhook_config
 from app.core.extractor import extract_fields
 from app.services.sl1_service import sl1_service
+from app.services.webhook_logger import init_webhook_logger, get_webhook_logger
 from app.web import web_router
 from app.web.config import get_web_config
 
@@ -16,6 +17,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="GenHook API", version="1.0.0")
+
+# Initialize webhook logger
+config = get_config()
+webhook_payload_logger = init_webhook_logger(config)
 
 # Configure web interface if enabled
 web_config = get_web_config()
@@ -81,6 +86,19 @@ async def receive_webhook(service: str, request: Request, response: Response):
                 "message": "Empty payload received and ignored",
                 "service": service
             }
+        
+        # Log the received payload
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            webhook_logger.log_payload(
+                service,
+                payload,
+                {
+                    "source_ip": request.client.host if request.client else "unknown",
+                    "user_agent": request.headers.get("user-agent", "unknown"),
+                    "content_length": request.headers.get("content-length", "unknown")
+                }
+            )
         
         webhook_config = get_webhook_config()
         
@@ -148,6 +166,20 @@ async def receive_webhook(service: str, request: Request, response: Response):
         
         success = await sl1_service.send_alert(message)
         
+        # Log the processing result
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            webhook_logger.log_processing_result(
+                service,
+                payload,
+                "success" if success else "sl1_failed",
+                generated_message=message,
+                metadata={
+                    "source_ip": request.client.host if request.client else "unknown",
+                    "user_agent": request.headers.get("user-agent", "unknown")
+                }
+            )
+        
         if success:
             logger.info(f"Successfully processed {service} webhook and sent to SL1")
             return {
@@ -165,9 +197,44 @@ async def receive_webhook(service: str, request: Request, response: Response):
             
     except ValueError as e:
         logger.error(f"Invalid JSON in {service} webhook: {e}")
+        
+        # Log error if we have a payload logger
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            try:
+                body = await request.body()
+                webhook_logger.log_processing_result(
+                    service,
+                    {"raw_body": body.decode("utf-8", errors="ignore")},
+                    "error",
+                    error_message=f"Invalid JSON: {str(e)}",
+                    metadata={
+                        "source_ip": request.client.host if request.client else "unknown"
+                    }
+                )
+            except:
+                pass  # Don't fail if logging fails
+        
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         logger.error(f"Error processing {service} webhook: {e}")
+        
+        # Log error if we have a payload logger
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            try:
+                webhook_logger.log_processing_result(
+                    service,
+                    {},  # No payload available in this case
+                    "error",
+                    error_message=str(e),
+                    metadata={
+                        "source_ip": request.client.host if request.client else "unknown"
+                    }
+                )
+            except:
+                pass  # Don't fail if logging fails
+        
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":

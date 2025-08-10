@@ -520,3 +520,141 @@ backend/
 - **Error Reduction**: Visual field selection prevents mistakes
 - **Fast Onboarding**: Quick setup of new webhook sources
 - **Safe Deployment**: Backup and rollback capabilities
+
+## Webhook Payload Logging
+
+### Overview
+GenHook automatically logs all received webhook payloads for debugging and template development. Each webhook type gets its own directory with rotating log files to prevent disk space issues.
+
+### Features
+- **Automatic Directory Creation**: New webhook types automatically get log directories
+- **Rotating Logs**: Prevents disk space issues (10MB per file, 5 backups)
+- **JSON Format**: Easy to parse and analyze
+- **Web Interface Integration**: Load recent payloads directly into config interface
+- **Permission Handling**: Graceful handling of permission issues in production
+
+### Configuration
+Edit `backend/config/app-config.ini`:
+```ini
+[webhook_logging]
+enabled = true
+base_directory = logs/webhooks
+max_bytes = 10485760  # 10MB per file
+backup_count = 5  # Keep 5 backup files
+log_file_name = payload.log
+```
+
+### Directory Structure
+```
+backend/logs/
+├── webhooks/
+│   ├── github/
+│   │   ├── payload.log      # Current log
+│   │   ├── payload.log.1    # First backup
+│   │   └── payload.log.2    # Second backup
+│   ├── stripe/
+│   │   └── payload.log
+│   └── [auto-created for each webhook type]/
+```
+
+### Web Interface Features
+- **Load Recent Payload** button in config interface
+- Dropdown showing last 10 payloads with timestamps
+- Auto-populate test payload field
+- API endpoint: `GET /api/webhook-logs/{webhook_type}/recent?limit=10`
+
+### Production Deployment (AWS)
+
+#### Initial Setup (One Time)
+```bash
+# Switch to genhook user
+sudo su - genhook
+cd /opt/genhook
+
+# Create logs directory
+mkdir -p /opt/genhook/backend/logs/webhooks
+chmod 755 /opt/genhook/backend/logs
+chmod 755 /opt/genhook/backend/logs/webhooks
+
+# Mark webhook-config.ini to ignore future changes
+git update-index --skip-worktree backend/config/webhook-config.ini
+```
+
+#### Deploying Updates
+```bash
+# As genhook user
+sudo su - genhook
+cd /opt/genhook
+
+# Stash local changes
+git stash save "Production config - $(date +%Y%m%d_%H%M%S)"
+
+# Pull updates
+git pull origin main  # or feature branch
+
+# Restore local changes
+git stash pop
+
+# Exit and restart
+exit
+sudo supervisorctl restart genhook
+```
+
+### Production Notes
+- Service runs as `genhook` user via supervisor
+- Logs directory: `/opt/genhook/backend/logs/webhooks/`
+- Permissions: 755 for directories, 644 for log files
+- Owner: genhook:genhook
+- Automatic rotation prevents disk space issues
+
+### Troubleshooting
+
+#### Permission Issues
+```bash
+# Check service user
+ps aux | grep genhook
+
+# Fix log directory permissions
+sudo chown -R genhook:genhook /opt/genhook/backend/logs
+sudo chmod -R 755 /opt/genhook/backend/logs
+```
+
+#### Viewing Logs
+```bash
+# View recent payloads for a webhook type
+sudo -u genhook tail -f /opt/genhook/backend/logs/webhooks/github/payload.log
+
+# Parse JSON logs
+sudo -u genhook cat /opt/genhook/backend/logs/webhooks/github/payload.log | jq '.'
+```
+
+#### Log Rotation
+- Automatic rotation at 10MB
+- Keeps 5 backup files (payload.log.1 through payload.log.5)
+- Oldest logs are deleted automatically
+
+### Log Format
+Each log entry (one per line for easy parsing):
+```json
+{
+  "timestamp": "2025-08-10T12:00:00Z",
+  "webhook_type": "github",
+  "payload": {...actual webhook payload...},
+  "source_ip": "192.168.1.1",
+  "user_agent": "GitHub-Hookshot/12345",
+  "processing_status": "success",
+  "generated_message": "GitHub push on repo...",
+  "content_length": "1234"
+}
+```
+
+### API Endpoints
+- `GET /api/webhook-logs/{webhook_type}/recent?limit=10` - Get recent payloads
+- `GET /api/webhook-logs/types` - Get list of webhook types with logs
+
+### Benefits
+- **Debugging**: See actual payloads when webhooks fail or produce unexpected output
+- **Template Development**: Use real payloads to create/refine webhook configurations
+- **Audit Trail**: Track what webhooks were received and when
+- **Web Interface Integration**: Load recent payloads directly into the config interface
+- **Disk Management**: Automatic rotation prevents runaway disk usage

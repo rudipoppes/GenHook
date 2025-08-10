@@ -112,6 +112,26 @@
                                 </div>
                             </div>
                             
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Load Recent Payload</label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <select class="form-select" id="webhookTypeSelect" style="max-width: 200px;">
+                                                <option value="">Select webhook type...</option>
+                                            </select>
+                                            <select class="form-select" id="recentPayloadSelect" style="max-width: 300px;" disabled>
+                                                <option value="">Select a recent payload...</option>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-info btn-sm" onclick="loadRecentPayload()" disabled id="loadRecentBtn">
+                                                <i class="fas fa-download me-1"></i>Load Payload
+                                            </button>
+                                        </div>
+                                        <small class="form-text text-muted">Load a real payload from webhook logs for testing and template building</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
                                 <label for="jsonPayload" class="form-label">JSON Payload</label>
                                 <textarea class="form-control font-monospace" id="jsonPayload" rows="10" 
