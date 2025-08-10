@@ -43,62 +43,75 @@ API docs at: http://localhost:8000/docs
 ## Web Configuration Interface
 
 ### Overview
-GenHook includes a comprehensive web-based configuration interface that eliminates the need to manually edit configuration files. The interface provides a 3-step wizard for creating webhook configurations with visual field selection and real-time testing.
+GenHook features a professional, responsive web-based configuration interface with a modern 2-column layout. The interface eliminates manual file editing and provides a complete webhook configuration management system with real-time testing and validation.
 
-### Access
+### Access & Layout
 - **Web Interface**: http://localhost:8000/config
-- **Configuration Management**: Visual webhook configuration without manual file editing
-- **Test Functionality**: Real-time testing of webhook configurations before saving
+- **Professional 65/35 Layout**: Configuration table and wizard on the left (65%), payload sidebar on the right (35%)
+- **Responsive Design**: Optimized for desktop and mobile with intelligent breakpoints
+- **Sticky Sidebar**: Payload section stays visible while scrolling through configurations
 
-### Features
+### Key Features
 
-#### 1. **3-Step Configuration Wizard**
-- **Step 1: Payload Analysis** - Upload sample JSON payloads for field discovery
-- **Step 2: Field Selection** - Visually select fields with nested pattern support  
-- **Step 3: Template Building** - Create message templates with live preview and testing
+#### 1. **Modern 2-Column Interface**
+- **Left Column**: Configuration table and 3-step wizard (65% width)
+- **Right Column**: Payload loading and JSON editing sidebar (35% width)
+- **Hidden-by-Default Wizard**: Clean interface with "New Config" button in table header
+- **Real-time Updates**: All changes take effect immediately without service restarts
 
-#### 2. **Visual Field Selection**
-- Automatic discovery of extractable fields from JSON payloads
-- Support for deeply nested patterns like `data{object}{amount}`
-- Filtering to show only leaf nodes (fields with actual values)
-- Real-time pattern generation for selected fields
+#### 2. **3-Step Configuration Wizard**
+- **Step 1: Basic Information** - Webhook type name and quick templates
+- **Step 2: Field Selection** - Visual field selection with existing configurations displayed
+- **Step 3: Template Building** - Message template creation with live preview
 
-#### 3. **Test-Before-Save**
-- Test webhook configurations with real payloads before saving
-- Live field extraction and template variable substitution
-- Performance metrics (processing time)
-- Error handling and validation feedback
+#### 3. **Enhanced Payload Sidebar**
+- **Recent Payload Loading**: Auto-load from previous webhook executions by type
+- **Auto-Loading Dropdowns**: Automatic payload loading when selections change
+- **JSON Validation**: Real-time syntax validation and error reporting
+- **Sticky Positioning**: Always visible during configuration workflow
 
-#### 4. **Edit Mode**
-- Load existing configurations for modification
-- Add test payloads for testing configuration changes
-- Proper variable context for existing field selections
-- Update existing configurations safely
+#### 4. **Improved Edit Mode**
+- **Shows Existing Data**: Displays current field selections and message template
+- **Step 2 Start**: Begins editing in field selection to show what's currently configured
+- **Modify Everything**: Change field selections, reorganize variables, edit templates
+- **Visual Field Display**: Checkboxes show current selections, enable modifications
 
 #### 5. **Configuration Management**
-- View all current webhook configurations in a table
-- Edit and delete existing configurations
-- Automatic backup creation before changes
-- Real-time table updates after save/delete operations
+- **Professional Table**: Clean overview of all webhook configurations
+- **Inline Actions**: Edit and delete buttons for each configuration
+- **Automatic Backups**: Safe configuration updates with rollback capability
+- **Dynamic Loading**: No service restarts required for configuration changes
 
 ### Quick Start Guide
 
 #### Creating a New Webhook Configuration:
 1. Navigate to http://localhost:8000/config
-2. Enter a webhook type name (e.g., "github", "stripe")
-3. Paste a sample JSON payload from your webhook source
-4. Click "Analyze Payload" to discover available fields
-5. Select the fields you want to extract
-6. Create a message template using variables like `$field.name$`
-7. Click "Test Config" to verify the configuration works
-8. Click "Save Configuration" to add it to your webhook-config.ini (takes effect immediately)
+2. Click the **"New Config"** button in the configurations table header
+3. Enter webhook type name (e.g., "github", "stripe") in Step 1
+4. Use the **payload sidebar** to load a recent payload or paste JSON data
+5. Click **"Analyze Payload"** to discover extractable fields (→ Step 2)
+6. **Select fields** using checkboxes - see real-time field pattern generation
+7. Click **"Create Template"** to proceed to Step 3
+8. **Build your message template** using variables like `$field.name$`
+9. Click **"Test Config"** to validate with the sidebar payload
+10. Click **"Save Configuration"** (takes effect immediately)
 
 #### Editing Existing Configurations:
-1. Click the edit button (pencil icon) on any configuration in the table
-2. Modify the message template as needed
-3. Click "Add Test Payload" to provide sample data for testing
-4. Paste a JSON payload and click "Test Config"
-5. Click "Save Configuration" to update the existing configuration (takes effect immediately)
+1. Click the **edit button** (pencil icon) on any configuration
+2. **Step 2 opens** showing current field selections with pre-checked boxes
+3. **Modify field selections** - check/uncheck fields as needed
+4. Use the **payload sidebar** to load recent payloads for testing
+5. Click **"Create Template"** to proceed to template editing (Step 3)
+6. **Edit the message template** - reorganize variables, modify text
+7. Click **"Test Config"** to validate changes with sidebar payload
+8. Click **"Save Configuration"** to update (takes effect immediately)
+
+#### Using the Payload Sidebar:
+1. **Select webhook type** from dropdown to load recent payloads
+2. **Choose recent payload** - auto-loads when selected (no manual button)
+3. **Or paste JSON directly** into the payload textarea
+4. **Validate JSON** using the validation button for syntax checking
+5. **Payload stays loaded** throughout the entire configuration workflow
 
 ### Configuration File Integration
 - Configurations are saved to `backend/config/webhook-config.ini`
@@ -312,16 +325,16 @@ log_rotation = daily
 - ✅ HTTPS/SSL support for secure webhooks
 - ✅ Empty payload handling with 200 responses
 
-🎉 **Phase 5**: Web Configuration Interface (COMPLETED)
-- ✅ 3-step configuration wizard (payload analysis, field selection, template building)
-- ✅ Visual field discovery and selection from JSON payloads
-- ✅ Real-time testing of webhook configurations before saving
-- ✅ Edit mode for existing configurations with test payload support
-- ✅ Enhanced field extraction engine with nested pattern parsing
-- ✅ Automatic configuration backup and file management
-- ✅ Bootstrap 5 responsive web interface at http://localhost:8000/config
-- ✅ **Dynamic Configuration Loading**: No service restarts required
-- ✅ Production-ready with clean codebase and error handling
+🎉 **Phase 5**: Web Configuration Interface (COMPLETED) 
+- ✅ **Professional 2-Column Layout**: 65/35 split with responsive design and sticky sidebar
+- ✅ **Enhanced 3-Step Wizard**: Hidden by default with "New Config" button in table header
+- ✅ **Auto-Loading Payload Sidebar**: Recent payload loading with dropdown auto-selection
+- ✅ **Improved Edit Mode**: Shows existing field selections and templates, starts at Step 2
+- ✅ **Visual Field Management**: Checkbox-based field selection with real-time updates
+- ✅ **Real-time Testing**: Test configurations with sidebar payloads before saving
+- ✅ **Dynamic Configuration Loading**: No service restarts required for config changes
+- ✅ **Professional UI/UX**: Bootstrap 5 responsive interface with modern design patterns
+- ✅ **Production-Ready**: Clean codebase, error handling, and automatic backups
 
 🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
 - 🟡 Thread pool implementation for high-volume processing
