@@ -87,18 +87,7 @@ async def receive_webhook(service: str, request: Request, response: Response):
                 "service": service
             }
         
-        # Log the received payload
-        webhook_logger = get_webhook_logger()
-        if webhook_logger:
-            webhook_logger.log_payload(
-                service,
-                payload,
-                {
-                    "source_ip": request.client.host if request.client else "unknown",
-                    "user_agent": request.headers.get("user-agent", "unknown"),
-                    "content_length": request.headers.get("content-length", "unknown")
-                }
-            )
+        # Note: Payload logging is handled in log_processing_result() later
         
         webhook_config = get_webhook_config()
         
@@ -176,7 +165,8 @@ async def receive_webhook(service: str, request: Request, response: Response):
                 generated_message=message,
                 metadata={
                     "source_ip": request.client.host if request.client else "unknown",
-                    "user_agent": request.headers.get("user-agent", "unknown")
+                    "user_agent": request.headers.get("user-agent", "unknown"),
+                    "content_length": request.headers.get("content-length", "unknown")
                 }
             )
         
