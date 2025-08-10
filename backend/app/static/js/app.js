@@ -639,3 +639,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // Export for use in HTML inline scripts
 window.showNotification = GenHook.ui.showNotification;
 window.formatFileSize = GenHook.utils.formatFileSize;
+
+// Export recent payload functions to global scope
+window.loadAvailableWebhookTypes = loadAvailableWebhookTypes;
+window.loadRecentPayloads = loadRecentPayloads;
+window.loadRecentPayload = loadRecentPayload;
+window.loadRecentPayloadToEdit = loadRecentPayloadToEdit;
+window.initRecentPayloadLoading = initRecentPayloadLoading;
+window.loadAvailableWebhookTypesForEdit = loadAvailableWebhookTypesForEdit;
+window.loadRecentPayloadsForEdit = loadRecentPayloadsForEdit;
