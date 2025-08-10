@@ -4,6 +4,7 @@ Web interface business logic and services.
 import json
 import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -241,6 +242,10 @@ class ConfigGenerator:
                 if value is not None:
                     # Use both the pattern and simplified key
                     message = message.replace(f"${key}$", str(value))
+            
+            # Replace any remaining unresolved variables with '-'
+            # Use a specific pattern that looks for $word.word$ variable patterns
+            message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
             
             return message
             

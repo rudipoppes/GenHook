@@ -2,6 +2,7 @@
 FastAPI routes for the web configuration interface.
 """
 import json
+import re
 from typing import Dict, Any
 
 from fastapi import APIRouter, Request, HTTPException, Form, Depends
@@ -164,6 +165,10 @@ async def test_config(request: WebhookTestRequest):
         for key, value in extracted_data.items():
             if value is not None:
                 message = message.replace(f"${key}$", str(value))
+        
+        # Replace any remaining unresolved variables with '-'
+        # Use a specific pattern that looks for $word.word$ variable patterns
+        message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
         
         processing_time = (time.time() - start_time) * 1000
         

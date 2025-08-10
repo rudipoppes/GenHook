@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import logging
 import os
+import re
 from pathlib import Path
 
 from app.core.config import get_config, get_webhook_config
@@ -140,6 +141,10 @@ async def receive_webhook(service: str, request: Request, response: Response):
                 message = message.replace(f"${key}$", str(value))
                 if old_message != message:
                     logger.info(f"Replaced ${key}$ with '{value}'")
+        
+        # Replace any remaining unresolved variables with '-'
+        # Use a specific pattern that looks for $word.word$ variable patterns
+        message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
         
         success = await sl1_service.send_alert(message)
         
