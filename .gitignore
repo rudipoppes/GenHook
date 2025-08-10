@@ -80,6 +80,9 @@ deployment_guide.html
 /backend/config/*prod*.ini
 /backend/config/*production*.ini
 
+# Webhook configuration (environment-specific, modified by web interface)
+/backend/config/webhook-config.ini
+
 # Runtime files
 server.log
 nohup.out
