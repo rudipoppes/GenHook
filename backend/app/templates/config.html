@@ -418,6 +418,7 @@
             
             if (step === 3) {
                 updateAvailableVariables();
+                updatePreview();
             }
         }
 
@@ -818,9 +819,11 @@
                     });
                     updateSelectedFields();
                     
-                    showStep(3);
-                    updateAvailableVariables();
-                    updatePreview();
+                    // Show step 2 first so user can see and modify selected fields
+                    showStep(2);
+                    
+                    // Enable the "Create Template" button since fields are already selected
+                    document.getElementById('nextToTemplateBtn').disabled = false;
                     
                     // Show the configuration wizard
                     showNewConfigWizard();
