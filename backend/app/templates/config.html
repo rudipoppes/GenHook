@@ -41,7 +41,7 @@
 
         <div class="row">
             <!-- LEFT COLUMN: Current Configurations and Wizard -->
-            <div class="col-lg-8">
+            <div class="col-8">
                 <!-- Current Configurations Overview -->
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -212,7 +212,7 @@
             </div>
 
             <!-- RIGHT COLUMN: Payload Section -->
-            <div class="col-lg-4">
+            <div class="col-4">
                 <div class="payload-section" style="position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;">
                     <div class="card">
                         <div class="card-header bg-info text-white">
@@ -311,6 +311,12 @@
             
             // Initialize sidebar payload functionality
             initSidebarPayloadLoading();
+            
+            // Ensure payload status starts in correct state
+            const payloadStatus = document.getElementById('payloadStatus');
+            if (payloadStatus) {
+                payloadStatus.classList.add('d-none'); // Hidden by default
+            }
         });
 
         async function loadWebConfig() {
@@ -794,10 +800,23 @@
         // NEW UI FUNCTIONS FOR SIDEBAR PAYLOAD SECTION
         
         function showNewConfigWizard() {
-            document.getElementById('configWizard').classList.remove('d-none');
-            document.getElementById('payloadStatus').classList.remove('d-none');
-            document.getElementById('payloadStatusText').textContent = 'Ready for payload input';
+            const wizard = document.getElementById('configWizard');
+            wizard.classList.remove('d-none');
+            
+            // Ensure payload status is visible
+            const payloadStatus = document.getElementById('payloadStatus');
+            if (payloadStatus) {
+                payloadStatus.classList.remove('d-none');
+                document.getElementById('payloadStatusText').textContent = 'Ready for payload input';
+            }
+            
+            // Show step 1 and scroll to wizard
             showStep(1);
+            
+            // Scroll wizard into view with some delay to ensure DOM is updated
+            setTimeout(() => {
+                wizard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
         
         function hideNewConfigWizard() {
