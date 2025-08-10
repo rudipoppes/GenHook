@@ -56,10 +56,10 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/webhook/{service}")
-async def receive_webhook(service: str, request: Request, response: Response):
+@app.post("/webhook/{service}/{token}")
+async def receive_webhook(service: str, token: str, request: Request, response: Response):
     """
-    Generic webhook endpoint that processes any configured webhook type
+    Tokenized webhook endpoint that validates token before processing
     """
     try:
         # Check for completely empty body first
@@ -91,10 +91,13 @@ async def receive_webhook(service: str, request: Request, response: Response):
         
         webhook_config = get_webhook_config()
         
-        if service not in webhook_config:
-            raise HTTPException(status_code=404, detail=f"Webhook type '{service}' not configured")
+        # Build the config key with service:token format
+        config_key = f"{service}:{token}"
         
-        config_line = webhook_config[service]
+        if config_key not in webhook_config:
+            raise HTTPException(status_code=404, detail=f"Invalid webhook token for '{service}'")
+        
+        config_line = webhook_config[config_key]
         fields_part, template = config_line.split('::', 1)
         
         # Parse fields carefully to handle nested braces
@@ -153,7 +156,10 @@ async def receive_webhook(service: str, request: Request, response: Response):
         # Use a specific pattern that looks for $word.word$ variable patterns
         message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
         
-        success = await sl1_service.send_alert(message)
+        # Prepend service:token to the message for SL1
+        final_message = f"{service}:{token}: {message}"
+        
+        success = await sl1_service.send_alert(final_message)
         
         # Log the processing result
         webhook_logger = get_webhook_logger()
@@ -162,31 +168,34 @@ async def receive_webhook(service: str, request: Request, response: Response):
                 service,
                 payload,
                 "success" if success else "sl1_failed",
-                generated_message=message,
+                generated_message=final_message,
                 metadata={
                     "source_ip": request.client.host if request.client else "unknown",
                     "user_agent": request.headers.get("user-agent", "unknown"),
-                    "content_length": request.headers.get("content-length", "unknown")
+                    "content_length": request.headers.get("content-length", "unknown"),
+                    "token": token
                 }
             )
         
         if success:
-            logger.info(f"Successfully processed {service} webhook and sent to SL1")
+            logger.info(f"Successfully processed {service}:{token} webhook and sent to SL1")
             return {
                 "status": "success", 
                 "message": "Webhook processed and alert sent to SL1",
-                "generated_message": message
+                "generated_message": final_message,
+                "service_token": f"{service}:{token}"
             }
         else:
-            logger.error(f"Failed to send {service} webhook to SL1")
+            logger.error(f"Failed to send {service}:{token} webhook to SL1")
             return {
                 "status": "error",
                 "message": "Webhook processed but failed to send to SL1",
-                "generated_message": message
+                "generated_message": final_message,
+                "service_token": f"{service}:{token}"
             }
             
     except ValueError as e:
-        logger.error(f"Invalid JSON in {service} webhook: {e}")
+        logger.error(f"Invalid JSON in {service}:{token} webhook: {e}")
         
         # Log error if we have a payload logger
         webhook_logger = get_webhook_logger()
@@ -199,7 +208,8 @@ async def receive_webhook(service: str, request: Request, response: Response):
                     "error",
                     error_message=f"Invalid JSON: {str(e)}",
                     metadata={
-                        "source_ip": request.client.host if request.client else "unknown"
+                        "source_ip": request.client.host if request.client else "unknown",
+                        "token": token
                     }
                 )
             except:
@@ -207,7 +217,7 @@ async def receive_webhook(service: str, request: Request, response: Response):
         
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
-        logger.error(f"Error processing {service} webhook: {e}")
+        logger.error(f"Error processing {service}:{token} webhook: {e}")
         
         # Log error if we have a payload logger
         webhook_logger = get_webhook_logger()

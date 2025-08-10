@@ -75,6 +75,7 @@ class ConfigSaveRequest(BaseModel):
     """Request model for saving webhook configuration."""
     
     webhook_type: str = Field(..., description="Webhook type name")
+    token: str = Field(..., description="Unique token for this webhook configuration")
     config_line: str = Field(..., description="Configuration line to save")
     create_backup: bool = Field(True, description="Whether to create backup before saving")
 
@@ -84,6 +85,8 @@ class ConfigSaveResponse(BaseModel):
     
     success: bool = Field(..., description="Whether save was successful")
     webhook_type: str = Field(..., description="Webhook type name")
+    token: str = Field(..., description="Token for this webhook configuration")
+    webhook_url: str = Field(..., description="Complete webhook URL with token")
     backup_file: Optional[str] = Field(None, description="Backup file path if created")
     service_restarted: bool = Field(False, description="Whether service was restarted")
     error_message: Optional[str] = Field(None, description="Error message if success=False")

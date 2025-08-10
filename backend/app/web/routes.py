@@ -23,6 +23,7 @@ from .models import (
 )
 from .services import PayloadAnalyzer, ConfigGenerator, ConfigManager
 from ..services.webhook_logger import get_webhook_logger
+from ..services.token_generator import generate_unique_token
 
 # Create router
 router = APIRouter()
@@ -193,6 +194,28 @@ async def test_config(request: WebhookTestRequest):
         )
 
 
+@router.get("/api/generate-token")
+async def generate_token(prefix: str = None):
+    """Generate a unique token for webhook authentication."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    # Load current configs to ensure uniqueness
+    configurations = config_manager.load_current_configs()
+    
+    # Generate unique token
+    token = generate_unique_token(configurations, prefix=prefix)
+    
+    # Get base URL from configuration or use default
+    base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+    
+    return {
+        "success": True,
+        "token": token,
+        "example_url": f"{base_url}/webhook/{{service}}/{token}"
+    }
+
+
 @router.post("/api/save-config", response_model=ConfigSaveResponse)
 async def save_config(request: ConfigSaveRequest):
     """Save webhook configuration to file."""
@@ -200,9 +223,12 @@ async def save_config(request: ConfigSaveRequest):
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     try:
-        # Save the configuration
+        # Build the config key with service:token format
+        config_key = f"{request.webhook_type}:{request.token}"
+        
+        # Save the configuration with tokenized key
         success, backup_file, error_msg = config_manager.save_config(
-            request.webhook_type,
+            config_key,
             request.config_line,
             request.create_backup
         )
@@ -211,14 +237,22 @@ async def save_config(request: ConfigSaveRequest):
             return ConfigSaveResponse(
                 success=False,
                 webhook_type=request.webhook_type,
+                token=request.token,
+                webhook_url="",
                 backup_file=None,
                 service_restarted=False,
                 error_message=error_msg
             )
         
+        # Get base URL for webhook URL construction
+        base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+        webhook_url = f"{base_url}/webhook/{request.webhook_type}/{request.token}"
+        
         return ConfigSaveResponse(
             success=True,
             webhook_type=request.webhook_type,
+            token=request.token,
+            webhook_url=webhook_url,
             backup_file=backup_file,
             service_restarted=False,  # No restart needed - config is read dynamically
             error_message=None
@@ -228,6 +262,8 @@ async def save_config(request: ConfigSaveRequest):
         return ConfigSaveResponse(
             success=False,
             webhook_type=request.webhook_type,
+            token=request.token,
+            webhook_url="",
             backup_file=None,
             service_restarted=False,
             error_message=str(e)
@@ -259,32 +295,42 @@ async def list_configs():
         )
 
 
-@router.get("/api/config/{webhook_type}")
-async def get_config(webhook_type: str):
-    """Get configuration for a specific webhook type."""
+@router.get("/api/config/{service}/{token}")
+async def get_config(service: str, token: str):
+    """Get configuration for a specific service:token combination."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     configurations = config_manager.load_current_configs()
     
-    if webhook_type not in configurations:
-        raise HTTPException(status_code=404, detail=f"Webhook type '{webhook_type}' not found")
+    # Build config key
+    config_key = f"{service}:{token}"
     
-    config_line = configurations[webhook_type]
+    if config_key not in configurations:
+        raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")
+    
+    config_line = configurations[config_key]
     fields_part, template = config_line.split('::', 1)
     fields = [f.strip() for f in fields_part.split(',')]
     
+    # Get base URL for webhook URL
+    base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+    webhook_url = f"{base_url}/webhook/{service}/{token}"
+    
     return {
-        "webhook_type": webhook_type,
+        "webhook_type": service,
+        "token": token,
+        "config_key": config_key,
+        "webhook_url": webhook_url,
         "fields": fields,
         "message_template": template,
         "config_line": config_line
     }
 
 
-@router.delete("/api/config/{webhook_type}")
-async def delete_config(webhook_type: str):
-    """Delete a webhook configuration."""
+@router.delete("/api/config/{service}/{token}")
+async def delete_config(service: str, token: str):
+    """Delete a webhook configuration by service:token key."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
@@ -299,21 +345,24 @@ async def delete_config(webhook_type: str):
         config = ConfigParser()
         config.read(str(config_file_path))
         
-        if 'webhooks' not in config or webhook_type not in config['webhooks']:
-            raise HTTPException(status_code=404, detail=f"Webhook type '{webhook_type}' not found")
+        # Build config key
+        config_key = f"{service}:{token}"
+        
+        if 'webhooks' not in config or config_key not in config['webhooks']:
+            raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")
         
         # Create backup before deletion
         if web_config.backup_configs:
             config_manager._create_backup()
         
-        # Remove the webhook type
-        del config['webhooks'][webhook_type]
+        # Remove the configuration
+        del config['webhooks'][config_key]
         
         # Write back to file
         with open(config_file_path, 'w') as f:
             config.write(f)
         
-        return {"success": True, "message": f"Webhook type '{webhook_type}' deleted"}
+        return {"success": True, "message": f"Configuration '{config_key}' deleted"}
         
     except HTTPException:
         raise
