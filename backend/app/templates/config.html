@@ -221,6 +221,29 @@
                                 </div>
                             </div>
                             
+                            <!-- Recent Payload Loading for Edit Mode -->
+                            <div id="editModeRecentPayload" class="d-none mb-3 mt-3">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0"><i class="fas fa-download me-2"></i>Load Recent Payload (Edit Mode)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <select class="form-select" id="editWebhookTypeSelect" style="max-width: 200px;">
+                                                <option value="">Select webhook type...</option>
+                                            </select>
+                                            <select class="form-select" id="editRecentPayloadSelect" style="max-width: 300px;" disabled>
+                                                <option value="">Select a recent payload...</option>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="loadRecentPayloadToEdit()" disabled id="editLoadRecentBtn">
+                                                <i class="fas fa-download me-1"></i>Load
+                                            </button>
+                                        </div>
+                                        <small class="form-text text-muted mt-2">Load a real payload from webhook logs to test your configuration changes</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Test Payload for Edit Mode -->
                             <div id="editModeTestPayload" class="d-none mb-3 mt-3">
                                 <div class="card border-info">
@@ -735,7 +758,21 @@
                     if (toggleBtn) {
                         toggleBtn.style.display = 'inline-block';
                     }
-                    showNotification('Edit Mode', `Editing configuration for '${webhookType}'`, 'info');
+                    
+                    // Show recent payload section and auto-populate webhook type
+                    const editModeRecentPayload = document.getElementById('editModeRecentPayload');
+                    const editWebhookTypeSelect = document.getElementById('editWebhookTypeSelect');
+                    if (editModeRecentPayload) {
+                        editModeRecentPayload.classList.remove('d-none');
+                    }
+                    if (editWebhookTypeSelect) {
+                        editWebhookTypeSelect.value = webhookType;
+                        // Trigger change event to load recent payloads
+                        const event = new Event('change');
+                        editWebhookTypeSelect.dispatchEvent(event);
+                    }
+                    
+                    showNotification('Edit Mode', `Editing configuration for '${webhookType}' - Use "Load Recent Payload" to test with real data`, 'info');
                 } else {
                     showNotification('Error', 'Failed to load configuration', 'error');
                 }

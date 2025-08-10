@@ -441,12 +441,34 @@ function loadRecentPayload() {
     }
 }
 
-// Event handlers for recent payload loading
-document.addEventListener('DOMContentLoaded', function() {
-    // Load available webhook types on page load
-    loadAvailableWebhookTypes();
+// Load recent payload for edit mode
+function loadRecentPayloadToEdit() {
+    const payloadSelect = document.getElementById('editRecentPayloadSelect');
+    const selectedOption = payloadSelect.selectedOptions[0];
     
-    // Handle webhook type selection
+    if (selectedOption && selectedOption.dataset.payload) {
+        try {
+            const payload = JSON.parse(selectedOption.dataset.payload);
+            const textarea = document.getElementById('editTestPayload');
+            
+            if (textarea) {
+                textarea.value = JSON.stringify(payload, null, 2);
+                GenHook.ui.showNotification('Recent payload loaded to edit mode', 'success');
+            }
+        } catch (error) {
+            console.error('Error loading payload to edit mode:', error);
+            GenHook.ui.showNotification('Error loading payload', 'error');
+        }
+    }
+}
+
+// Initialize recent payload loading when page loads
+function initRecentPayloadLoading() {
+    // Load available webhook types on page load for both regular and edit mode
+    loadAvailableWebhookTypes();
+    loadAvailableWebhookTypesForEdit();
+    
+    // Handle webhook type selection (regular mode)
     const webhookTypeSelect = document.getElementById('webhookTypeSelect');
     if (webhookTypeSelect) {
         webhookTypeSelect.addEventListener('change', function() {
@@ -454,15 +476,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (webhookType) {
                 loadRecentPayloads(webhookType);
             } else {
-                const payloadSelect = document.getElementById('recentPayloadSelect');
-                const loadBtn = document.getElementById('loadRecentBtn');
-                if (payloadSelect) payloadSelect.disabled = true;
-                if (loadBtn) loadBtn.disabled = true;
+                resetPayloadSelection();
             }
         });
     }
     
-    // Handle recent payload selection
+    // Handle recent payload selection (regular mode)
     const recentPayloadSelect = document.getElementById('recentPayloadSelect');
     if (recentPayloadSelect) {
         recentPayloadSelect.addEventListener('change', function() {
@@ -472,11 +491,130 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+    
+    // Handle webhook type selection (edit mode)
+    const editWebhookTypeSelect = document.getElementById('editWebhookTypeSelect');
+    if (editWebhookTypeSelect) {
+        editWebhookTypeSelect.addEventListener('change', function() {
+            const webhookType = this.value;
+            if (webhookType) {
+                loadRecentPayloadsForEdit(webhookType);
+            } else {
+                resetEditPayloadSelection();
+            }
+        });
+    }
+    
+    // Handle recent payload selection (edit mode)
+    const editRecentPayloadSelect = document.getElementById('editRecentPayloadSelect');
+    if (editRecentPayloadSelect) {
+        editRecentPayloadSelect.addEventListener('change', function() {
+            const loadBtn = document.getElementById('editLoadRecentBtn');
+            if (loadBtn) {
+                loadBtn.disabled = !this.value;
+            }
+        });
+    }
+}
+
+// Helper function to reset payload selection
+function resetPayloadSelection() {
+    const payloadSelect = document.getElementById('recentPayloadSelect');
+    const loadBtn = document.getElementById('loadRecentBtn');
+    if (payloadSelect) {
+        payloadSelect.disabled = true;
+        payloadSelect.innerHTML = '<option value="">Select a recent payload...</option>';
+    }
+    if (loadBtn) loadBtn.disabled = true;
+}
+
+// Helper function to reset edit mode payload selection
+function resetEditPayloadSelection() {
+    const payloadSelect = document.getElementById('editRecentPayloadSelect');
+    const loadBtn = document.getElementById('editLoadRecentBtn');
+    if (payloadSelect) {
+        payloadSelect.disabled = true;
+        payloadSelect.innerHTML = '<option value="">Select a recent payload...</option>';
+    }
+    if (loadBtn) loadBtn.disabled = true;
+}
+
+// Load available webhook types for edit mode
+async function loadAvailableWebhookTypesForEdit() {
+    try {
+        const response = await fetch('/api/webhook-logs/types');
+        const data = await response.json();
+        
+        const select = document.getElementById('editWebhookTypeSelect');
+        if (select) {
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            // Add webhook types
+            if (data.success && data.webhook_types) {
+                data.webhook_types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load webhook types for edit mode recent payloads:', error);
+    }
+}
+
+// Load recent payloads for edit mode
+async function loadRecentPayloadsForEdit(webhookType) {
+    try {
+        const response = await fetch(`/api/webhook-logs/${webhookType}/recent?limit=10`);
+        const data = await response.json();
+        
+        const select = document.getElementById('editRecentPayloadSelect');
+        const loadBtn = document.getElementById('editLoadRecentBtn');
+        
+        if (select) {
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            if (data.success && data.payloads) {
+                data.payloads.forEach((entry, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    
+                    // Create a readable timestamp
+                    const timestamp = new Date(entry.timestamp).toLocaleString();
+                    const status = entry.processing_status || 'logged';
+                    
+                    option.textContent = `${timestamp} (${status})`;
+                    option.dataset.payload = JSON.stringify(entry.payload);
+                    select.appendChild(option);
+                });
+                
+                select.disabled = false;
+            } else {
+                select.disabled = true;
+            }
+            
+            loadBtn.disabled = true; // Will be enabled when a payload is selected
+        }
+    } catch (error) {
+        console.error('Error loading recent payloads for edit mode:', error);
+        GenHook.ui.showNotification('Error loading recent payloads', 'error');
+    }
+}
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('GenHook Configuration Interface loaded');
+    
+    // Initialize recent payload loading functionality
+    initRecentPayloadLoading();
     
     // Add keyboard shortcuts
     document.addEventListener('keydown', function(e) {
