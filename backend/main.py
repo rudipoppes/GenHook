@@ -156,8 +156,8 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         # Use a specific pattern that looks for $word.word$ variable patterns
         message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
         
-        # Prepend service:token to the message for SL1
-        final_message = f"{service}:{token}: {message}"
+        # Prepend service|token| to the message for SL1 (easy to strip)
+        final_message = f"{service}|{token}| {message}"
         
         success = await sl1_service.send_alert(final_message)
         
