@@ -54,8 +54,6 @@
         color: #aaaaaa;
       }
     pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
     @media screen {
     pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
     }
@@ -73,7 +71,6 @@
     code span.dt { color: #902000; } /* DataType */
     code span.dv { color: #40a070; } /* DecVal */
     code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
     code span.im { color: #008000; font-weight: bold; } /* Import */
@@ -420,8 +417,7 @@ Configuration Wizard</strong></h4>
 <ul>
 <li><strong>Step 1: Basic Information</strong> - Webhook type name and
 quick templates</li>
-<li><strong>Step 2: Field Selection</strong> - Visual field selection
-with existing configurations displayed</li>
+<li><strong>Step 2: Field Selection</strong> - Hierarchical tree structure with collapsible folders, search, and smart selection</li>
 <li><strong>Step 3: Template Building</strong> - Message template
 creation with live preview</li>
 </ul>
@@ -479,7 +475,7 @@ table header</li>
 paste JSON data</li>
 <li>Click <strong>“Analyze Payload”</strong> to discover extractable
 fields (→ Step 2)</li>
-<li><strong>Select fields</strong> using checkboxes - see real-time
+<li><strong>Select fields</strong> using hierarchical tree with folders, search, and Smart Select - see real-time
 field pattern generation</li>
 <li>Click <strong>“Create Template”</strong> to proceed to Step 3</li>
 <li><strong>Build your message template</strong> using variables like
@@ -985,8 +981,7 @@ Wizard</strong>: Hidden by default with “New Config” button in table
 header - ✅ <strong>Auto-Loading Payload Sidebar</strong>: Recent
 payload loading with dropdown auto-selection - ✅ <strong>Improved Edit
 Mode</strong>: Shows existing field selections and templates, starts at
-Step 2 - ✅ <strong>Visual Field Management</strong>: Checkbox-based
-field selection with real-time updates - ✅ <strong>Real-time
+Step 2 - ✅ <strong>Hierarchical Tree Field Selection</strong>: Collapsible tree structure with folder organization, search, and smart selection - ✅ <strong>Enhanced Field Discovery</strong>: 200 total fields (was 100), 5 nesting levels (was 3), 75 per level (was 50) - ✅ <strong>Interactive Features</strong>: Search filtering, Smart Select common patterns, bulk folder selection - ✅ <strong>Real-time
 Testing</strong>: Test configurations with sidebar payloads before
 saving - ✅ <strong>Dynamic Configuration Loading</strong>: No service
 restarts required for config changes - ✅ <strong>Professional
@@ -1009,6 +1004,15 @@ from table and modal - ✅ <strong>Honest Security</strong>: Clear
 messaging about token accessibility and recovery options - ✅
 <strong>Production-Tested</strong>: Full tokenization system tested and
 operational</p>
+<p>🌳 <strong>Phase 7</strong>: Hierarchical Tree Field Selection UI (COMPLETED)
+- ✅ <strong>Tree Structure UI</strong>: Replace flat field lists with collapsible folder hierarchy
+- ✅ <strong>Enhanced Field Limits</strong>: 200 total fields, 5 nesting levels, 75 fields per level
+- ✅ <strong>Interactive Navigation</strong>: Expand/collapse folders, visual indentation, folder/file icons
+- ✅ <strong>Smart Features</strong>: Search with auto-expand, Smart Select common patterns, bulk folder selection
+- ✅ <strong>Progressive Disclosure</strong>: Show only relevant sections, organize complex payloads logically
+- ✅ <strong>Backward Compatibility</strong>: Edit mode works with existing configurations, field patterns unchanged
+- ✅ <strong>GitHub Payload Tested</strong>: 154 fields organized in 13-item tree hierarchy
+- ✅ <strong>Production Ready</strong>: Tree structure dramatically improves UX for complex webhooks</p>
 <p>🔧 <strong>Next Phases</strong>: Multi-Threading &amp; Production
 Features (PLANNED) - 🟡 Thread pool implementation for high-volume
 processing - 🟡 Advanced monitoring and metrics collection - 🟡
@@ -1219,8 +1223,7 @@ without manual file editing.</p>
 <h3 data-number="1.11.2" id="key-features-2"><span
 class="header-section-number">1.11.2</span> Key Features</h3>
 <ul>
-<li><strong>Visual Field Selection</strong>: Interactive tree view of
-JSON payload fields</li>
+<li><strong>Hierarchical Tree Field Selection</strong>: Collapsible folder structure with 200+ field support, search, Smart Select, and bulk operations</li>
 <li><strong>Live Preview</strong>: Real-time message generation
 preview</li>
 <li><strong>Template Builder</strong>: Guided template creation with
@@ -1261,7 +1264,7 @@ class="header-section-number">1.11.5</span> User Workflow</h3>
 <ol type="1">
 <li>Access web interface at <code>/config</code></li>
 <li>Paste JSON payload from webhook source</li>
-<li>Select fields using interactive tree interface</li>
+<li>Select fields using hierarchical tree interface with folders, search, and bulk selection</li>
 <li>Build message template with live preview</li>
 <li>Save configuration (takes effect immediately)</li>
 <li>Test with actual webhook</li>
