@@ -17,8 +17,8 @@ def generate_webhook_token(length: int = 32, prefix: Optional[str] = None) -> st
     Returns:
         str: A unique token string
     """
-    # Use alphanumeric characters for URL safety
-    alphabet = string.ascii_letters + string.digits
+    # Use lowercase alphanumeric characters only for consistency
+    alphabet = string.ascii_lowercase + string.digits
     random_part = ''.join(secrets.choice(alphabet) for _ in range(length))
     
     if prefix:
