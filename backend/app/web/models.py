@@ -22,6 +22,8 @@ class FieldInfo(BaseModel):
     is_array: bool = Field(False, description="Whether this field contains array data")
     array_length: Optional[int] = Field(None, description="Array length if is_array=True")
     children: Optional[List['FieldInfo']] = Field(None, description="Child fields for objects/arrays")
+    is_leaf: bool = Field(True, description="Whether this is a selectable leaf field")
+    field_count: Optional[int] = Field(None, description="Number of child fields (for containers)")
 
 
 class PayloadAnalysisResponse(BaseModel):

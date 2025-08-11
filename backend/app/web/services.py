@@ -34,21 +34,18 @@ class PayloadAnalyzer:
             webhook_type: Optional webhook type hint
             
         Returns:
-            PayloadAnalysisResponse with discovered fields
+            PayloadAnalysisResponse with discovered fields in tree structure
         """
         try:
-            # Discover fields including nested ones (but limit depth)
-            fields = []
-            self._discover_fields_recursive(payload, fields, "", "", 0)
-            
-            # Increased limit to capture more fields (was 20, now 100)
-            fields = fields[:100]
+            # Build hierarchical tree structure
+            tree_fields = []
+            total_leaf_count = self._build_field_tree(payload, tree_fields, "", "", 0)
             
             response = PayloadAnalysisResponse(
                 success=True,
                 webhook_type=webhook_type,
-                total_fields=len(fields),
-                fields=fields,
+                total_fields=total_leaf_count,
+                fields=tree_fields,
                 error_message=None
             )
             return response
@@ -76,11 +73,11 @@ class PayloadAnalyzer:
         Skips intermediate object containers to show only useful fields.
         """
         # Limit depth to prevent infinite recursion
-        if depth > 3:
+        if depth > 5:
             return
             
         if isinstance(data, dict):
-            for key, value in list(data.items())[:50]:  # Increased from 15 to 50 items per level
+            for key, value in list(data.items())[:75]:  # Increased from 15 to 75 items per level
                 new_path = f"{path}.{key}" if path else key
                 new_pattern = f"{pattern}{{{key}}}" if pattern else key
                 
@@ -101,9 +98,9 @@ class PayloadAnalyzer:
                         fields_list.append(field_info)
                     
                     # Continue recursing into nested structures
-                    if isinstance(value, dict) and depth < 3:
+                    if isinstance(value, dict) and depth < 5:
                         self._discover_fields_recursive(value, fields_list, new_path, new_pattern, depth + 1)
-                    elif isinstance(value, list) and value and depth < 3:
+                    elif isinstance(value, list) and value and depth < 5:
                         # For arrays, analyze the first item to find leaf fields within
                         first_item = value[0] if value else None
                         if isinstance(first_item, dict):
@@ -155,6 +152,72 @@ class PayloadAnalyzer:
             return "object"
         else:
             return "unknown"
+    
+    def _build_field_tree(self, data: Any, tree_list: List[FieldInfo], path: str = "", pattern: str = "", depth: int = 0) -> int:
+        """
+        Build hierarchical tree structure for field selection UI.
+        Returns total count of leaf fields.
+        """
+        # Limit depth to prevent infinite recursion
+        if depth > 5:
+            return 0
+            
+        leaf_count = 0
+            
+        if isinstance(data, dict):
+            for key, value in list(data.items())[:75]:  # Process up to 75 items per level
+                new_path = f"{path}.{key}" if path else key
+                new_pattern = f"{pattern}{{{key}}}" if pattern else key
+                
+                try:
+                    if self._is_leaf_node(value):
+                        # This is a selectable field - add as leaf
+                        field_info = FieldInfo(
+                            path=new_path,
+                            pattern=new_pattern,
+                            field_type=self._get_field_type(value),
+                            sample_value=self._get_sample_value(value),
+                            is_array=isinstance(value, list),
+                            array_length=len(value) if isinstance(value, list) else None,
+                            children=None,
+                            is_leaf=True,
+                            field_count=None
+                        )
+                        tree_list.append(field_info)
+                        leaf_count += 1
+                    else:
+                        # This is a container (object/array) - add as branch with children
+                        children = []
+                        child_leaf_count = 0
+                        
+                        if isinstance(value, dict) and depth < 5:
+                            child_leaf_count = self._build_field_tree(value, children, new_path, new_pattern, depth + 1)
+                        elif isinstance(value, list) and value and depth < 5:
+                            # For arrays, analyze first item
+                            first_item = value[0] if value else None
+                            if isinstance(first_item, dict):
+                                child_leaf_count = self._build_field_tree(first_item, children, new_path, new_pattern, depth + 1)
+                        
+                        # Only add container if it has children
+                        if children:
+                            container_info = FieldInfo(
+                                path=new_path,
+                                pattern=new_pattern,
+                                field_type=self._get_field_type(value),
+                                sample_value=self._get_sample_value(value),
+                                is_array=isinstance(value, list),
+                                array_length=len(value) if isinstance(value, list) else None,
+                                children=children,
+                                is_leaf=False,
+                                field_count=child_leaf_count
+                            )
+                            tree_list.append(container_info)
+                            leaf_count += child_leaf_count
+                            
+                except Exception as e:
+                    continue
+                    
+        return leaf_count
     
     def _get_sample_value(self, value: Any) -> Any:
         """Get a sample value for display, truncating if too long."""

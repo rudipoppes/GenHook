@@ -72,6 +72,56 @@
                 min-width: auto !important;
             }
         }
+        
+        /* Tree Structure Styles */
+        .field-tree {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        
+        .tree-node {
+            margin-bottom: 0.5rem;
+        }
+        
+        .tree-node .btn-link {
+            color: #6c757d;
+            text-decoration: none;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .tree-node .btn-link:hover {
+            color: #0d6efd;
+        }
+        
+        .tree-children {
+            border-left: 2px solid #dee2e6;
+            margin-left: 10px;
+            padding-left: 10px;
+        }
+        
+        .tree-node .fas.fa-folder {
+            color: #fd7e14 !important;
+        }
+        
+        .tree-node .fas.fa-file {
+            color: #198754 !important;
+        }
+        
+        .form-check-label {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .form-check-label code {
+            background-color: rgba(13, 110, 253, 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -571,24 +621,252 @@
             const container = document.getElementById('fieldsTree');
             container.innerHTML = '';
             
+            // Add search bar and quick actions
+            const searchBar = document.createElement('div');
+            searchBar.className = 'mb-3';
+            searchBar.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="fieldSearch" placeholder="Search fields..." onkeyup="filterFields()">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="selectCommonFields()">
+                                <i class="fas fa-magic me-1"></i>Smart Select
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllSelections()">
+                                <i class="fas fa-times me-1"></i>Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(searchBar);
+            
+            // Create tree container
+            const treeContainer = document.createElement('div');
+            treeContainer.className = 'field-tree';
+            treeContainer.id = 'fieldTreeContainer';
+            
             fields.forEach(field => {
-                const div = document.createElement('div');
-                div.className = 'form-check mb-2';
-                div.innerHTML = `
-                    <input class="form-check-input" type="checkbox" value="${field.pattern}" 
-                           id="field_${field.path.replace(/\./g, '_')}" onchange="updateSelectedFields()">
-                    <label class="form-check-label" for="field_${field.path.replace(/\./g, '_')}">
-                        <code class="text-primary">${field.pattern}</code>
-                        <small class="text-muted d-block">${field.field_type}</small>
-                    </label>
-                `;
-                container.appendChild(div);
+                treeContainer.appendChild(createTreeNode(field, 0));
             });
+            
+            container.appendChild(treeContainer);
+        }
+        
+        function createTreeNode(field, depth) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            nodeDiv.style.marginLeft = `${depth * 20}px`;
+            
+            if (field.is_leaf) {
+                // Leaf node - selectable field
+                nodeDiv.innerHTML = `
+                    <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input me-2" type="checkbox" value="${field.pattern}" 
+                               id="field_${field.path.replace(/\./g, '_')}" onchange="updateSelectedFields()">
+                        <label class="form-check-label flex-grow-1" for="field_${field.path.replace(/\./g, '_')}">
+                            <i class="fas fa-file text-success me-1"></i>
+                            <code class="text-primary">${field.pattern}</code>
+                            <small class="text-muted ms-2">(${field.field_type})</small>
+                        </label>
+                    </div>
+                `;
+            } else {
+                // Container node - collapsible folder
+                const folderId = `folder_${field.path.replace(/\./g, '_')}`;
+                const childrenId = `children_${field.path.replace(/\./g, '_')}`;
+                
+                nodeDiv.innerHTML = `
+                    <div class="d-flex align-items-center mb-2">
+                        <button class="btn btn-sm btn-link p-0 me-2" onclick="toggleFolder('${childrenId}', this)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" 
+                                   id="${folderId}" onchange="toggleFolderSelection('${folderId}', '${childrenId}')">
+                            <label class="form-check-label" for="${folderId}">
+                                <i class="fas fa-folder text-warning me-1"></i>
+                                <strong>${field.path.split('.').pop()}</strong>
+                                <small class="text-muted ms-2">(${field.field_count} fields)</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="${childrenId}" class="tree-children" style="display: none;">
+                    </div>
+                `;
+                
+                // Add children
+                const childrenContainer = nodeDiv.querySelector(`#${childrenId}`);
+                if (field.children) {
+                    field.children.forEach(child => {
+                        childrenContainer.appendChild(createTreeNode(child, depth + 1));
+                    });
+                }
+            }
+            
+            return nodeDiv;
+        }
+        
+        function toggleFolder(childrenId, button) {
+            const children = document.getElementById(childrenId);
+            const icon = button.querySelector('i');
+            
+            if (children.style.display === 'none') {
+                children.style.display = 'block';
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                children.style.display = 'none';
+                icon.className = 'fas fa-chevron-right';
+            }
+        }
+        
+        function toggleFolderSelection(folderId, childrenId) {
+            const folderCheckbox = document.getElementById(folderId);
+            const childrenContainer = document.getElementById(childrenId);
+            
+            // Get all leaf checkboxes in this folder
+            const leafCheckboxes = childrenContainer.querySelectorAll('input[type="checkbox"][value]');
+            
+            // Set all children to match parent state
+            leafCheckboxes.forEach(checkbox => {
+                checkbox.checked = folderCheckbox.checked;
+            });
+            
+            // Update selected fields
+            updateSelectedFields();
+        }
+        
+        function filterFields() {
+            const searchTerm = document.getElementById('fieldSearch').value.toLowerCase();
+            const treeNodes = document.querySelectorAll('.tree-node');
+            
+            treeNodes.forEach(node => {
+                const text = node.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    node.style.display = '';
+                    // Expand parent folders if this node matches
+                    expandParentFolders(node);
+                } else {
+                    node.style.display = 'none';
+                }
+            });
+            
+            // If search is empty, show all nodes and collapse folders
+            if (!searchTerm) {
+                treeNodes.forEach(node => node.style.display = '');
+                collapseAllFolders();
+            }
+        }
+        
+        function expandParentFolders(node) {
+            let parent = node.parentElement;
+            while (parent && parent.id !== 'fieldTreeContainer') {
+                if (parent.classList.contains('tree-children')) {
+                    parent.style.display = 'block';
+                    // Update chevron icon
+                    const parentNode = parent.previousElementSibling;
+                    const chevron = parentNode?.querySelector('.fa-chevron-right');
+                    if (chevron) {
+                        chevron.className = 'fas fa-chevron-down';
+                    }
+                }
+                parent = parent.parentElement;
+            }
+        }
+        
+        function collapseAllFolders() {
+            const childrenContainers = document.querySelectorAll('.tree-children');
+            const chevrons = document.querySelectorAll('.fa-chevron-down');
+            
+            childrenContainers.forEach(container => {
+                container.style.display = 'none';
+            });
+            
+            chevrons.forEach(chevron => {
+                chevron.className = 'fas fa-chevron-right';
+            });
+        }
+        
+        function selectCommonFields() {
+            // Smart selection based on webhook type and common patterns
+            const commonPatterns = [
+                // GitHub patterns
+                'ref', 'repository{name}', 'repository{full_name}', 'repository{owner{login}}',
+                'pusher{name}', 'sender{login}', 'head_commit{message}', 'head_commit{author{name}}',
+                'commits{message}', 'commits{author{name}}', 'action',
+                
+                // Stripe patterns  
+                'type', 'data{object{amount}}', 'data{object{currency}}', 'data{object{status}}',
+                'data{object{customer}}', 'data{object{id}}',
+                
+                // Slack patterns
+                'event{type}', 'event{user}', 'event{text}', 'user{name}', 'channel{name}',
+                
+                // Common fields across services
+                'id', 'name', 'type', 'status', 'created', 'updated', 'timestamp',
+                'user', 'email', 'message', 'title', 'description'
+            ];
+            
+            // Clear current selections
+            clearAllSelections();
+            
+            // Select fields that match common patterns
+            let selectedCount = 0;
+            commonPatterns.forEach(pattern => {
+                const checkbox = document.querySelector(`input[value="${pattern}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    selectedCount++;
+                }
+            });
+            
+            // If no exact matches, select some likely candidates based on field names
+            if (selectedCount === 0) {
+                const allCheckboxes = document.querySelectorAll('#fieldsTree input[value]');
+                const likelyFields = [];
+                
+                allCheckboxes.forEach(checkbox => {
+                    const value = checkbox.value.toLowerCase();
+                    if (value.includes('name') || value.includes('id') || value.includes('type') || 
+                        value.includes('status') || value.includes('message') || value.includes('title') ||
+                        value.includes('user') || value.includes('email')) {
+                        likelyFields.push(checkbox);
+                    }
+                });
+                
+                // Select up to 10 likely fields
+                likelyFields.slice(0, 10).forEach(checkbox => {
+                    checkbox.checked = true;
+                    selectedCount++;
+                });
+            }
+            
+            updateSelectedFields();
+            
+            if (selectedCount > 0) {
+                showNotification('Smart Select', `Selected ${selectedCount} common fields`, 'success');
+            } else {
+                showNotification('Smart Select', 'No common fields found - you can select fields manually', 'info');
+            }
+        }
+        
+        function clearAllSelections() {
+            const allCheckboxes = document.querySelectorAll('#fieldsTree input[type="checkbox"]');
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedFields();
         }
 
         function updateSelectedFields() {
             selectedFieldsList = [];
-            const checkboxes = document.querySelectorAll('#fieldsTree input:checked');
+            // Only get leaf checkboxes (those with a value attribute)
+            const checkboxes = document.querySelectorAll('#fieldsTree input[value]:checked');
             
             checkboxes.forEach(cb => selectedFieldsList.push(cb.value));
             
@@ -911,7 +1189,10 @@
                     const mockFields = result.fields.map(field => ({
                         pattern: field,
                         path: field.replace(/\{/g, '.').replace(/\}/g, ''),
-                        field_type: 'string'
+                        field_type: 'string',
+                        is_leaf: true,
+                        children: null,
+                        field_count: null
                     }));
                     
                     analyzedPayload = {
