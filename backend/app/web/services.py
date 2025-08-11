@@ -41,8 +41,8 @@ class PayloadAnalyzer:
             fields = []
             self._discover_fields_recursive(payload, fields, "", "", 0)
             
-            # Limit to prevent UI overload
-            fields = fields[:20]
+            # Increased limit to capture more fields (was 20, now 100)
+            fields = fields[:100]
             
             response = PayloadAnalysisResponse(
                 success=True,
@@ -80,7 +80,7 @@ class PayloadAnalyzer:
             return
             
         if isinstance(data, dict):
-            for key, value in list(data.items())[:15]:  # Limit items per level
+            for key, value in list(data.items())[:50]:  # Increased from 15 to 50 items per level
                 new_path = f"{path}.{key}" if path else key
                 new_pattern = f"{pattern}{{{key}}}" if pattern else key
                 
