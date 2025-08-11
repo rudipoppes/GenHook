@@ -870,6 +870,9 @@
                                 <button class="btn btn-sm btn-outline-info" onclick="copyWebhookUrl('${service}', '${token}')" title="Copy Webhook URL">
                                     <i class="fas fa-copy"></i>
                                 </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="copyToken('${token}')" title="Copy Token">
+                                    <i class="fas fa-key"></i>
+                                </button>
                                 <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${service}', '${token}')" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -1008,11 +1011,16 @@
         }
         
         function copyWebhookUrl(service, token) {
-            const baseUrl = 'https://your-domain.com';
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
             const webhookUrl = `${baseUrl}/webhook/${service}/${token}`;
             
             copyToClipboard('', webhookUrl);
             showNotification('Copied', 'Webhook URL copied to clipboard', 'success');
+        }
+        
+        function copyToken(token) {
+            copyToClipboard(null, token);
+            showNotification('Copied', 'Token copied to clipboard', 'success');
         }
         
         function copyToClipboard(elementId, text = null) {

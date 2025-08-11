@@ -195,7 +195,7 @@ async def test_config(request: WebhookTestRequest):
 
 
 @router.get("/api/generate-token")
-async def generate_token(prefix: str = None):
+async def generate_token(request: Request, prefix: str = None):
     """Generate a unique token for webhook authentication."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
@@ -206,8 +206,8 @@ async def generate_token(prefix: str = None):
     # Generate unique token
     token = generate_unique_token(configurations, prefix=prefix)
     
-    # Get base URL from configuration or use default
-    base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+    # Get base URL dynamically from request
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
     
     return {
         "success": True,
@@ -217,7 +217,7 @@ async def generate_token(prefix: str = None):
 
 
 @router.post("/api/save-config", response_model=ConfigSaveResponse)
-async def save_config(request: ConfigSaveRequest):
+async def save_config(request: ConfigSaveRequest, http_request: Request):
     """Save webhook configuration to file."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
@@ -244,8 +244,8 @@ async def save_config(request: ConfigSaveRequest):
                 error_message=error_msg
             )
         
-        # Get base URL for webhook URL construction
-        base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+        # Get base URL dynamically from request
+        base_url = f"{http_request.url.scheme}://{http_request.url.netloc}"
         webhook_url = f"{base_url}/webhook/{request.webhook_type}/{request.token}"
         
         return ConfigSaveResponse(
@@ -296,7 +296,7 @@ async def list_configs():
 
 
 @router.get("/api/config/{service}/{token}")
-async def get_config(service: str, token: str):
+async def get_config(service: str, token: str, request: Request):
     """Get configuration for a specific service:token combination."""
     if not web_config.enabled:
         raise HTTPException(status_code=404, detail="Web interface disabled")
@@ -313,8 +313,8 @@ async def get_config(service: str, token: str):
     fields_part, template = config_line.split('::', 1)
     fields = [f.strip() for f in fields_part.split(',')]
     
-    # Get base URL for webhook URL
-    base_url = web_config.base_url if hasattr(web_config, 'base_url') else "https://your-domain.com"
+    # Get base URL dynamically from request
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
     webhook_url = f"{base_url}/webhook/{service}/{token}"
     
     return {
