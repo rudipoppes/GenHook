@@ -217,7 +217,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
-        logger.error(f"Error processing {service}:{token} webhook: {e}")
+        logger.error(f"Error processing {service}_{token} webhook: {e}")
         
         # Log error if we have a payload logger
         webhook_logger = get_webhook_logger()
