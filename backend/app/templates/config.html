@@ -115,29 +115,14 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Webhook Type</th>
-                                        <th>Fields</th>
+                                        <th>Service</th>
+                                        <th>Token</th>
                                         <th>Template Preview</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="configurationsTable">
-                                    {% for webhook_type, config_line in current_configs.items() %}
-                                    {% set fields, template = config_line.split('::', 1) %}
-                                    <tr>
-                                        <td><code>{{ webhook_type }}</code></td>
-                                        <td class="small text-muted">{{ fields[:50] + ('...' if fields|length > 50 else '') }}</td>
-                                        <td class="small">{{ template[:60] + ('...' if template|length > 60 else '') }}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="editConfig('{{ webhook_type }}')">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('{{ webhook_type }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                    <!-- Configurations will be loaded dynamically -->
                                 </tbody>
                             </table>
                         </div>
@@ -159,6 +144,10 @@
                             <div class="mb-3">
                                 <label for="webhookType" class="form-label">Webhook Type Name</label>
                                 <input type="text" class="form-control" id="webhookType" placeholder="e.g., github, stripe, slack">
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Security Token:</strong> A unique token will be generated when you save the configuration to secure your webhook endpoint.
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Quick Templates</label>
@@ -343,6 +332,46 @@
                 <div class="toast-body" id="toastMessage"></div>
             </div>
         </div>
+
+        <!-- Webhook URL Modal -->
+        <div class="modal fade" id="webhookUrlModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Configuration Saved!</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Your webhook is now ready!</strong> Copy the complete URL below to configure your webhook source.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Complete Webhook URL:</strong></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="modalWebhookUrl" readonly 
+                                       style="font-size: 1rem; letter-spacing: 0.5px; padding: 12px;">
+                                <button class="btn btn-success btn-lg" type="button" onclick="copyModalUrl()" id="copyModalBtn">
+                                    <i class="fas fa-copy me-1"></i>Copy URL
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">This URL includes a unique security token - keep it secure</small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Ready to use:</strong> Save this URL securely and use it to configure your webhook source. You can also copy it later from the configuration table if needed.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                            <i class="fas fa-check me-1"></i>Done
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Footer -->
@@ -364,7 +393,9 @@
         let analyzedPayload = null;
         let selectedFieldsList = [];
         let currentWebhookType = '';
+        let currentToken = ''; // Track current token when editing
         let webConfig = {}; // Web interface configuration
+        let isEditMode = false; // Track if we're editing an existing config
 
         // Load configurations and web config on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -391,6 +422,8 @@
             if (payloadStatus) {
                 payloadStatus.classList.add('d-none'); // Hidden by default
             }
+            
+            // No auto-generation - tokens will be generated on save
         });
 
         async function loadWebConfig() {
@@ -690,12 +723,32 @@
 
         async function saveConfiguration() {
             const template = document.getElementById('messageTemplate').value.trim();
+            
             if (!template) {
                 showNotification('Error', 'Please enter a message template', 'error');
                 return;
             }
             
             try {
+                let token, isNewConfig;
+                
+                if (isEditMode) {
+                    // In edit mode, use the existing token
+                    token = currentToken;
+                    isNewConfig = false;
+                } else {
+                    // New configuration - generate a token
+                    const tokenResponse = await fetch('/api/generate-token');
+                    const tokenResult = await tokenResponse.json();
+                    
+                    if (!tokenResult.success) {
+                        showNotification('Error', 'Failed to generate security token', 'error');
+                        return;
+                    }
+                    token = tokenResult.token;
+                    isNewConfig = true;
+                }
+                
                 const configLine = selectedFieldsList.join(',') + '::' + template;
                 
                 const response = await fetch('/api/save-config', {
@@ -703,6 +756,7 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         webhook_type: currentWebhookType,
+                        token: token,
                         config_line: configLine,
                         create_backup: true
                     })
@@ -711,16 +765,17 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showNotification('Success', `Webhook '${currentWebhookType}' saved successfully`, 'success');
+                    if (isNewConfig) {
+                        // Show success modal only for new configurations
+                        showWebhookUrlModal(result.webhook_url);
+                    } else {
+                        // Edit mode - just show success notification
+                        showNotification('Success', `Configuration updated successfully`, 'success');
+                    }
                     
                     // Force complete reset and refresh
                     resetWizard();
                     loadConfigurations();
-                    
-                    // Additional cleanup - force DOM refresh
-                    setTimeout(() => {
-                        resetWizard();
-                    }, 100);
                 } else {
                     showNotification('Error', result.error_message, 'error');
                 }
@@ -734,6 +789,8 @@
             analyzedPayload = null;
             selectedFieldsList = [];
             currentWebhookType = '';
+            currentToken = '';
+            isEditMode = false;
             
             // Clear all form fields
             document.getElementById('webhookType').value = '';
@@ -782,18 +839,41 @@
                     const tbody = document.getElementById('configurationsTable');
                     tbody.innerHTML = '';
                     
-                    Object.entries(result.configurations).forEach(([webhookType, configLine]) => {
+                    Object.entries(result.configurations).forEach(([configKey, configLine]) => {
                         const [fields, template] = configLine.split('::', 2);
+                        
+                        // Parse service and token from config key
+                        let service, token;
+                        if (configKey.includes('_')) {
+                            const parts = configKey.split('_');
+                            if (parts.length >= 2) {
+                                // Last part is token, everything before is service
+                                token = parts[parts.length - 1];
+                                service = parts.slice(0, -1).join('_');
+                            } else {
+                                service = configKey;
+                                token = 'legacy';
+                            }
+                        } else {
+                            service = configKey;
+                            token = 'legacy';
+                        }
+                        
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td><code>${webhookType}</code></td>
-                            <td class="small text-muted">${fields.length > 50 ? fields.substring(0, 50) + '...' : fields}</td>
+                            <td><code>${service}</code></td>
+                            <td class="small">
+                                <code class="text-muted">${token.length > 12 ? token.substring(0, 10) + '...' : token}</code>
+                            </td>
                             <td class="small">${template.length > 60 ? template.substring(0, 60) + '...' : template}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${webhookType}')">
+                                <button class="btn btn-sm btn-outline-info" onclick="copyWebhookUrl('${service}', '${token}')" title="Copy Webhook URL">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${service}', '${token}')" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('${webhookType}')">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig('${service}', '${token}')" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -808,16 +888,20 @@
             }
         }
 
-        async function editConfig(webhookType) {
+        async function editConfig(service, token) {
             try {
-                const response = await fetch(`/api/config/${webhookType}`);
+                const response = await fetch(`/api/config/${service}/${token}`);
                 const result = await response.json();
                 
                 if (response.ok) {
                     resetWizard();
                     
-                    document.getElementById('webhookType').value = webhookType;
-                    currentWebhookType = webhookType;
+                    // Set edit mode and track current token
+                    isEditMode = true;
+                    currentWebhookType = service;
+                    currentToken = token;
+                    
+                    document.getElementById('webhookType').value = service;
                     document.getElementById('messageTemplate').value = result.message_template;
                     selectedFieldsList = result.fields;
                     
@@ -863,13 +947,13 @@
                     // Auto-populate sidebar webhook type for easy payload loading
                     const sidebarWebhookTypeSelect = document.getElementById('sidebarWebhookTypeSelect');
                     if (sidebarWebhookTypeSelect) {
-                        sidebarWebhookTypeSelect.value = webhookType;
+                        sidebarWebhookTypeSelect.value = service;
                         // Trigger change event to load recent payloads
                         const event = new Event('change');
                         sidebarWebhookTypeSelect.dispatchEvent(event);
                     }
                     
-                    showNotification('Edit Mode', `Editing configuration for '${webhookType}' - Use the sidebar to load recent payloads for testing`, 'info');
+                    showNotification('Edit Mode', `Editing configuration for '${service}:${token}' - Use the sidebar to load recent payloads for testing`, 'info');
                 } else {
                     showNotification('Error', 'Failed to load configuration', 'error');
                 }
@@ -878,21 +962,73 @@
             }
         }
 
-        async function deleteConfig(webhookType) {
-            if (!confirm(`Delete configuration for '${webhookType}'?`)) return;
+        async function deleteConfig(service, token) {
+            if (!confirm(`Delete configuration for '${service}:${token}'?`)) return;
             
             try {
-                const response = await fetch(`/api/config/${webhookType}`, {method: 'DELETE'});
+                const response = await fetch(`/api/config/${service}/${token}`, {method: 'DELETE'});
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showNotification('Success', `Webhook '${webhookType}' deleted`, 'success');
+                    showNotification('Success', `Webhook '${service}:${token}' deleted`, 'success');
                     loadConfigurations();
                 } else {
                     showNotification('Error', result.detail || 'Delete failed', 'error');
                 }
             } catch (error) {
                 showNotification('Error', 'Failed to delete configuration', 'error');
+            }
+        }
+        
+        // New functions for modal and webhook URL handling
+        function showWebhookUrlModal(webhookUrl) {
+            document.getElementById('modalWebhookUrl').value = webhookUrl;
+            
+            const modal = new bootstrap.Modal(document.getElementById('webhookUrlModal'));
+            modal.show();
+        }
+        
+        function copyModalUrl() {
+            const url = document.getElementById('modalWebhookUrl').value;
+            copyToClipboard('', url);
+            
+            const btn = document.getElementById('copyModalBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-light');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-light');
+                btn.classList.add('btn-success');
+            }, 2000);
+            
+            showNotification('Success', 'Webhook URL copied to clipboard!', 'success');
+        }
+        
+        function copyWebhookUrl(service, token) {
+            const baseUrl = 'https://your-domain.com';
+            const webhookUrl = `${baseUrl}/webhook/${service}/${token}`;
+            
+            copyToClipboard('', webhookUrl);
+            showNotification('Copied', 'Webhook URL copied to clipboard', 'success');
+        }
+        
+        function copyToClipboard(elementId, text = null) {
+            const textToCopy = text || document.getElementById(elementId).value;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy);
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
             }
         }
 

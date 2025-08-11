@@ -91,8 +91,8 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         
         webhook_config = get_webhook_config()
         
-        # Build the config key with service:token format
-        config_key = f"{service}:{token}"
+        # Build the config key with service_token format
+        config_key = f"{service}_{token}"
         
         if config_key not in webhook_config:
             raise HTTPException(status_code=404, detail=f"Invalid webhook token for '{service}'")

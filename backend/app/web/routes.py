@@ -223,8 +223,8 @@ async def save_config(request: ConfigSaveRequest):
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     try:
-        # Build the config key with service:token format
-        config_key = f"{request.webhook_type}:{request.token}"
+        # Build the config key with service_token format
+        config_key = f"{request.webhook_type}_{request.token}"
         
         # Save the configuration with tokenized key
         success, backup_file, error_msg = config_manager.save_config(
@@ -304,7 +304,7 @@ async def get_config(service: str, token: str):
     configurations = config_manager.load_current_configs()
     
     # Build config key
-    config_key = f"{service}:{token}"
+    config_key = f"{service}_{token}"
     
     if config_key not in configurations:
         raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")
@@ -346,7 +346,7 @@ async def delete_config(service: str, token: str):
         config.read(str(config_file_path))
         
         # Build config key
-        config_key = f"{service}:{token}"
+        config_key = f"{service}_{token}"
         
         if 'webhooks' not in config or config_key not in config['webhooks']:
             raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")

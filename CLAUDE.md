@@ -134,6 +134,93 @@ enable_config_validation = true
 enable_live_preview = true
 ```
 
+## Webhook Security & Tokenization
+
+### Overview
+GenHook implements a comprehensive token-based security system for webhook endpoints. Each webhook configuration includes a unique, cryptographically secure token that authenticates incoming webhooks and enables multiple configurations per service type.
+
+### Key Security Features
+
+#### 1. **Token-Based Authentication**
+- **Unique Tokens**: Each webhook configuration gets a 32-character cryptographically secure token
+- **URL Format**: `https://your-domain.com/webhook/{service}/{token}`
+- **Multiple Configs**: Support multiple webhook configurations per service type
+- **Token Validation**: Incoming webhooks validated against stored tokens before processing
+
+#### 2. **Secure Token Generation**
+- **Algorithm**: Uses Python's `secrets` module for cryptographic security
+- **Length**: 32 characters (alphanumeric: a-z, A-Z, 0-9)
+- **Uniqueness**: Automatic uniqueness validation across all existing configurations
+- **Generation Timing**: Tokens generated only when saving new configurations
+
+#### 3. **Configuration Format**
+```ini
+# Format: service_token = fields::template
+github_abc123xyz = action,repository{name}::GitHub $action$ on $repository.name$
+stripe_def456uvw = data{object}{amount}::Payment of $data.object.amount$
+```
+
+### User Experience
+
+#### **New Configuration Workflow:**
+1. User creates webhook configuration through web interface
+2. System generates unique token automatically on save
+3. **Success Modal**: Wide modal displays complete webhook URL for easy copying
+4. **One-Click Copy**: Single button copies entire URL including token
+5. **Clear Messaging**: "Save this URL securely - you can also copy it later from the configuration table"
+
+#### **Edit Configuration Workflow:**
+1. User edits existing configuration (template changes only)
+2. **Token Preserved**: Existing token remains unchanged
+3. **No Modal**: Simple success notification instead of popup
+4. **URL Accessible**: Webhook URL remains accessible via configuration table
+
+#### **Configuration Management:**
+- **Table View**: Displays service name and truncated token (`abc123...`)
+- **Copy URL Button**: Quick access to complete webhook URL with token
+- **Edit/Delete**: Standard CRUD operations with token preservation
+- **No False Security**: Honest messaging about token accessibility
+
+### Technical Implementation
+
+#### **Backend Architecture:**
+- **Endpoint**: `/webhook/{service}/{token}` validates token before processing
+- **Config Storage**: `service_token = fields::template` format in INI files
+- **Token Service**: Dedicated service for generation and uniqueness validation
+- **Message Format**: SL1 messages include `service:token:` prefix for source identification
+
+#### **Security Considerations:**
+- **ConfigParser Compatible**: Uses underscore separator to avoid INI parsing conflicts
+- **No Token Exposure**: Tokens not logged in application logs
+- **Admin Access Required**: Token visibility requires administrative web interface access
+- **Practical Security**: Balances security with user-friendliness and operational needs
+
+### API Endpoints
+
+#### **Token Management:**
+- `GET /api/generate-token` - Generate new unique token
+- `POST /api/save-config` - Save configuration with token
+- `GET /api/config/{service}/{token}` - Retrieve specific configuration
+- `DELETE /api/config/{service}/{token}` - Delete tokenized configuration
+
+#### **Webhook Reception:**
+- `POST /webhook/{service}/{token}` - Tokenized webhook endpoint
+- Token validation before payload processing
+- HTTP 404 for invalid tokens
+- HTTP 200 for valid webhooks with processing
+
+### Migration & Compatibility
+
+#### **Legacy Support:**
+- Existing non-tokenized configurations remain functional
+- Web interface displays legacy configurations as `legacy` tokens
+- Mixed environments supported (tokenized and legacy configs coexist)
+
+#### **No Backward Compatibility:**
+- New configurations require tokens
+- Users can delete and recreate legacy configurations with tokens
+- Web interface encourages migration to tokenized format
+
 ## Supported Webhook Sources
 
 ### Service Providers
@@ -147,9 +234,14 @@ enable_live_preview = true
 - **Shopify**: Orders, Customers, Products, Inventory
 
 ### Configuration Format
-Each webhook type is configured using INI syntax:
+Each webhook configuration uses tokenized INI syntax:
 ```ini
-webhook_type: field1,field2,nested{subfield}::Message template with $variables$
+# Tokenized format (current)
+service_token = field1,field2,nested{subfield}::Message template with $variables$
+
+# Examples:
+github_abc123xyz = action,repository{name}::GitHub $action$ on $repository.name$
+stripe_def456uvw = data{object}{amount}::Stripe payment of $data.object.amount$
 ```
 
 ### Field Extraction Patterns
@@ -335,6 +427,17 @@ log_rotation = daily
 - ✅ **Dynamic Configuration Loading**: No service restarts required for config changes
 - ✅ **Professional UI/UX**: Bootstrap 5 responsive interface with modern design patterns
 - ✅ **Production-Ready**: Clean codebase, error handling, and automatic backups
+
+🔐 **Phase 6**: Webhook Security & Tokenization (COMPLETED)
+- ✅ **Token-Based Authentication**: 32-character cryptographically secure tokens per configuration
+- ✅ **Multiple Configurations**: Support multiple webhook configs per service type
+- ✅ **Secure URL Format**: `https://domain.com/webhook/{service}/{token}` endpoint structure
+- ✅ **Smart Modal UX**: Wide confirmation modal for new configs, no popup for edits
+- ✅ **Token Preservation**: Edit mode preserves existing tokens, only updates templates
+- ✅ **Configuration Format**: `service_token = fields::template` INI-compatible format
+- ✅ **Copy-Friendly Interface**: One-click webhook URL copying from table and modal
+- ✅ **Honest Security**: Clear messaging about token accessibility and recovery options
+- ✅ **Production-Tested**: Full tokenization system tested and operational
 
 🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
 - 🟡 Thread pool implementation for high-volume processing

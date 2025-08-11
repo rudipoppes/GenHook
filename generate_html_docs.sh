@@ -95,13 +95,13 @@ cat > docs/html/index.html << EOF
 
     <section>
         <h2>📚 Documentation Overview</h2>
-        <p>GenHook is a configuration-driven, multi-threaded webhook receiver with a comprehensive web interface for managing webhook configurations without manual file editing.</p>
+        <p>GenHook is a configuration-driven, multi-threaded webhook receiver with a comprehensive web interface, secure tokenization system, and professional webhook configuration management.</p>
         
         <div class="doc-grid">
             <div class="doc-card">
                 <h3>📖 Complete Guide</h3>
                 <p>Main project documentation including architecture, features, and web interface usage.</p>
-                <p><span class="badge">Phase 5 Complete</span></p>
+                <p><span class="badge">Phase 6 Complete</span></p>
                 <p><a href="GenHook_Complete_Guide.html">View Complete Guide →</a></p>
             </div>
 
@@ -132,10 +132,12 @@ cat > docs/html/index.html << EOF
         <h2>🎯 Key Features</h2>
         <ul>
             <li><strong>Web Configuration Interface:</strong> http://localhost:8000/config</li>
+            <li><strong>Secure Tokenization:</strong> 32-character tokens for webhook authentication</li>
             <li><strong>3-Step Wizard:</strong> Payload analysis, field selection, template building</li>
             <li><strong>Visual Field Selection:</strong> No manual pattern writing required</li>
             <li><strong>Test-Before-Save:</strong> Real-time configuration testing</li>
-            <li><strong>Edit Mode:</strong> Modify existing configurations safely</li>
+            <li><strong>Edit Mode:</strong> Modify existing configurations with token preservation</li>
+            <li><strong>Multiple Configs:</strong> Support multiple webhook configs per service type</li>
             <li><strong>Production Ready:</strong> Clean codebase with comprehensive error handling</li>
         </ul>
     </section>

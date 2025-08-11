@@ -39,10 +39,12 @@ def is_token_unique(token: str, existing_configs: dict) -> bool:
     """
     # Check if any config key contains this token
     for config_key in existing_configs.keys():
-        if ':' in config_key:
-            _, existing_token = config_key.split(':', 1)
-            if existing_token == token:
-                return False
+        if '_' in config_key:
+            parts = config_key.rsplit('_', 1)  # Split from the right to handle service names with underscores
+            if len(parts) == 2:
+                _, existing_token = parts
+                if existing_token == token:
+                    return False
     return True
 
 
