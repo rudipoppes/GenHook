@@ -91,8 +91,8 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         
         webhook_config = get_webhook_config()
         
-        # Build the config key with service_token format
-        config_key = f"{service}_{token}"
+        # Build the config key with service_token format (lowercase service to match config)
+        config_key = f"{service.lower()}_{token}"
         
         if config_key not in webhook_config:
             raise HTTPException(status_code=404, detail=f"Invalid webhook token for '{service}'")
@@ -157,7 +157,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         message = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_.]*\$', '-', message)
         
         # Prepend service|token| to the message for SL1 (easy to strip)
-        final_message = f"{service}|{token}|{message}"
+        final_message = f"{service.lower()}|{token}|{message}"
         
         success = await sl1_service.send_alert(final_message)
         
@@ -165,7 +165,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         webhook_logger = get_webhook_logger()
         if webhook_logger:
             webhook_logger.log_processing_result(
-                service,
+                service.lower(),
                 payload,
                 "success" if success else "sl1_failed",
                 generated_message=final_message,
@@ -178,24 +178,24 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
             )
         
         if success:
-            logger.info(f"Successfully processed {service}:{token} webhook and sent to SL1")
+            logger.info(f"Successfully processed {service.lower()}:{token} webhook and sent to SL1")
             return {
                 "status": "success", 
                 "message": "Webhook processed and alert sent to SL1",
                 "generated_message": final_message,
-                "service_token": f"{service}:{token}"
+                "service_token": f"{service.lower()}:{token}"
             }
         else:
-            logger.error(f"Failed to send {service}:{token} webhook to SL1")
+            logger.error(f"Failed to send {service.lower()}:{token} webhook to SL1")
             return {
                 "status": "error",
                 "message": "Webhook processed but failed to send to SL1",
                 "generated_message": final_message,
-                "service_token": f"{service}:{token}"
+                "service_token": f"{service.lower()}:{token}"
             }
             
     except ValueError as e:
-        logger.error(f"Invalid JSON in {service}:{token} webhook: {e}")
+        logger.error(f"Invalid JSON in {service.lower()}:{token} webhook: {e}")
         
         # Log error if we have a payload logger
         webhook_logger = get_webhook_logger()
@@ -203,7 +203,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
             try:
                 body = await request.body()
                 webhook_logger.log_processing_result(
-                    service,
+                    service.lower(),
                     {"raw_body": body.decode("utf-8", errors="ignore")},
                     "error",
                     error_message=f"Invalid JSON: {str(e)}",
@@ -217,14 +217,14 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
-        logger.error(f"Error processing {service}_{token} webhook: {e}")
+        logger.error(f"Error processing {service.lower()}_{token} webhook: {e}")
         
         # Log error if we have a payload logger
         webhook_logger = get_webhook_logger()
         if webhook_logger:
             try:
                 webhook_logger.log_processing_result(
-                    service,
+                    service.lower(),
                     {},  # No payload available in this case
                     "error",
                     error_message=str(e),
