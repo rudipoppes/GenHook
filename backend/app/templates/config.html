@@ -1441,7 +1441,8 @@
         
         function copyWebhookUrl(service, token) {
             const baseUrl = `${window.location.protocol}//${window.location.host}`;
-            const webhookUrl = `${baseUrl}/webhook/${service}/${token}`;
+            // Convert service to lowercase to match backend processing
+            const webhookUrl = `${baseUrl}/webhook/${service.toLowerCase()}/${token}`;
             
             copyToClipboard('', webhookUrl);
             showNotification('Copied', 'Webhook URL copied to clipboard', 'success');
