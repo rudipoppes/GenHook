@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="GenHook Development Team" />
-  <meta name="dcterms.date" content="2025-08-11" />
+  <meta name="dcterms.date" content="2025-08-15" />
   <title>GenHook Complete Documentation Suite</title>
   <style>
     code{white-space: pre-wrap;}
@@ -54,6 +54,8 @@
         color: #aaaaaa;
       }
     pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
     @media screen {
     pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
     }
@@ -71,6 +73,7 @@
     code span.dt { color: #902000; } /* DataType */
     code span.dv { color: #40a070; } /* DecVal */
     code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
     code span.im { color: #008000; font-weight: bold; } /* Import */
@@ -92,7 +95,7 @@
 <header id="title-block-header">
 <h1 class="title">GenHook Complete Documentation Suite</h1>
 <p class="author">GenHook Development Team</p>
-<p class="date">2025-08-11</p>
+<p class="date">2025-08-15</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -985,10 +988,15 @@ class="header-section-number">1.6.3</span> SL1 Integration</h3>
 <li><strong>API Endpoint</strong>: <code>POST /api/alert</code></li>
 <li><strong>Authentication</strong>: HTTP Basic Auth
 (username/password)</li>
-<li><strong>Payload Format</strong>: Simplified JSON with only
-<code>message</code> field populated</li>
-<li><strong>Default Values</strong>: All other fields use SL1
-defaults</li>
+<li><strong>Payload Format</strong>: Simplified JSON with
+<code>message</code> and <code>aligned_resource</code> fields</li>
+<li><strong>Alignment Support</strong>: Organization ID
+(<code>/api/organization/{id}</code>) or Device ID
+(<code>/api/device/{id}</code>)</li>
+<li><strong>Default Alignment</strong>: System default
+(<code>/api/organization/0</code>)</li>
+<li><strong>Configuration Format</strong>:
+<code>service_token|alignment|fields|message</code></li>
 <li><strong>Retry Logic</strong>: Exponential backoff for failed API
 calls</li>
 </ul>
@@ -1173,38 +1181,45 @@ Wizard</strong>: Hidden by default with “New Config” button in table
 header - ✅ <strong>Auto-Loading Payload Sidebar</strong>: Recent
 payload loading with dropdown auto-selection - ✅ <strong>Improved Edit
 Mode</strong>: Shows existing field selections and templates, starts at
-Step 2 - ✅ <strong>Hierarchical Tree Field Selection</strong>: Collapsible tree structure with folder organization, search, and smart selection - ✅ <strong>Enhanced Field Discovery</strong>: 200 total fields (was 100), 5 nesting levels (was 3), 75 per level (was 50) - ✅ <strong>Interactive Features</strong>: Search filtering, Smart Select common patterns, bulk folder selection - ✅ <strong>Real-time
+Step 2 - ✅ <strong>Visual Field Management</strong>: Checkbox-based
+field selection with real-time updates - ✅ <strong>Real-time
 Testing</strong>: Test configurations with sidebar payloads before
 saving - ✅ <strong>Dynamic Configuration Loading</strong>: No service
 restarts required for config changes - ✅ <strong>Professional
 UI/UX</strong>: Bootstrap 5 responsive interface with modern design
 patterns - ✅ <strong>Production-Ready</strong>: Clean codebase, error
 handling, and automatic backups</p>
-<p>🔐 <strong>Phase 6</strong>: Webhook Security &amp; Tokenization
-(COMPLETED) - ✅ <strong>Token-Based Authentication</strong>:
-32-character cryptographically secure tokens per configuration - ✅
-<strong>Multiple Configurations</strong>: Support multiple webhook
-configs per service type - ✅ <strong>Secure URL Format</strong>:
+<p>🎯 <strong>Phase 6</strong>: SL1 Alignment &amp; Enhanced Security
+(COMPLETED) - ✅ <strong>SL1 Alignment Configuration</strong>:
+Organization/Device ID selection via modal interface - ✅
+<strong>Tokenized Webhook URLs</strong>: Unique tokens per configuration
+for enhanced security - ✅ <strong>New Configuration Format</strong>:
+<code>service_token|alignment|fields|message</code> with backward
+compatibility - ✅ <strong>Enhanced SL1 Integration</strong>: Dynamic
+<code>aligned_resource</code> parameter in SL1 API calls - ✅
+<strong>Copy Token Feature</strong>: Dedicated button to copy tokens for
+external use - ✅ <strong>Case Sensitivity Fixes</strong>: Proper
+lowercase URL generation matching backend processing - ✅
+<strong>Automatic Cleanup</strong>: Remove webhook log directories when
+deleting last config for service type - ✅ <strong>Configuration
+Management</strong>: SL1 Alignment column in configuration table</p>
+<ul>
+<li>✅ <strong>Secure URL Format</strong>:
 <code>https://domain.com/webhook/{service}/{token}</code> endpoint
-structure - ✅ <strong>Smart Modal UX</strong>: Wide confirmation modal
-for new configs, no popup for edits - ✅ <strong>Token
-Preservation</strong>: Edit mode preserves existing tokens, only updates
-templates - ✅ <strong>Configuration Format</strong>:
-<code>service_token = fields::template</code> INI-compatible format - ✅
-<strong>Copy-Friendly Interface</strong>: One-click webhook URL copying
-from table and modal - ✅ <strong>Honest Security</strong>: Clear
-messaging about token accessibility and recovery options - ✅
-<strong>Production-Tested</strong>: Full tokenization system tested and
-operational</p>
-<p>🌳 <strong>Phase 7</strong>: Hierarchical Tree Field Selection UI (COMPLETED)
-- ✅ <strong>Tree Structure UI</strong>: Replace flat field lists with collapsible folder hierarchy
-- ✅ <strong>Enhanced Field Limits</strong>: 200 total fields, 5 nesting levels, 75 fields per level
-- ✅ <strong>Interactive Navigation</strong>: Expand/collapse folders, visual indentation, folder/file icons
-- ✅ <strong>Smart Features</strong>: Search with auto-expand, Smart Select common patterns, bulk folder selection
-- ✅ <strong>Progressive Disclosure</strong>: Show only relevant sections, organize complex payloads logically
-- ✅ <strong>Backward Compatibility</strong>: Edit mode works with existing configurations, field patterns unchanged
-- ✅ <strong>GitHub Payload Tested</strong>: 154 fields organized in 13-item tree hierarchy
-- ✅ <strong>Production Ready</strong>: Tree structure dramatically improves UX for complex webhooks</p>
+structure</li>
+<li>✅ <strong>Smart Modal UX</strong>: Wide confirmation modal for new
+configs, no popup for edits</li>
+<li>✅ <strong>Token Preservation</strong>: Edit mode preserves existing
+tokens, only updates templates</li>
+<li>✅ <strong>Configuration Format</strong>:
+<code>service_token = fields::template</code> INI-compatible format</li>
+<li>✅ <strong>Copy-Friendly Interface</strong>: One-click webhook URL
+copying from table and modal</li>
+<li>✅ <strong>Honest Security</strong>: Clear messaging about token
+accessibility and recovery options</li>
+<li>✅ <strong>Production-Tested</strong>: Full tokenization system
+tested and operational</li>
+</ul>
 <p>🔧 <strong>Next Phases</strong>: Multi-Threading &amp; Production
 Features (PLANNED) - 🟡 Thread pool implementation for high-volume
 processing - 🟡 Advanced monitoring and metrics collection - 🟡
@@ -1415,16 +1430,24 @@ without manual file editing.</p>
 <h3 data-number="1.11.2" id="key-features-2"><span
 class="header-section-number">1.11.2</span> Key Features</h3>
 <ul>
-<li><strong>Hierarchical Tree Field Selection</strong>: Collapsible folder structure with 200+ field support, search, Smart Select, and bulk operations</li>
-<li><strong>Live Preview</strong>: Real-time message generation
-preview</li>
+<li><strong>Visual Field Selection</strong>: Interactive tree view of
+JSON payload fields with hierarchical display</li>
+<li><strong>SL1 Alignment Configuration</strong>: Modal interface for
+Organization/Device ID selection</li>
+<li><strong>Live Preview</strong>: Real-time message generation preview
+with actual payload testing</li>
 <li><strong>Template Builder</strong>: Guided template creation with
-variable suggestions<br />
-</li>
+variable suggestions</li>
+<li><strong>Tokenized Security</strong>: Unique tokens per webhook
+configuration for enhanced security</li>
 <li><strong>Configuration Management</strong>: Safe config updates with
-backup and rollback</li>
+automatic backup and rollback</li>
 <li><strong>Dynamic Loading</strong>: Configuration changes take effect
 immediately without service restarts</li>
+<li><strong>Copy Functions</strong>: Dedicated buttons for copying
+webhook URLs and tokens</li>
+<li><strong>Automatic Cleanup</strong>: Remove webhook log directories
+when deleting configurations</li>
 </ul>
 <h3 data-number="1.11.3" id="architecture-1"><span
 class="header-section-number">1.11.3</span> Architecture</h3>

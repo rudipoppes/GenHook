@@ -287,8 +287,10 @@ meraki_max_concurrent = 25
 ### SL1 Integration
 - **API Endpoint**: `POST /api/alert`
 - **Authentication**: HTTP Basic Auth (username/password)
-- **Payload Format**: Simplified JSON with only `message` field populated
-- **Default Values**: All other fields use SL1 defaults
+- **Payload Format**: Simplified JSON with `message` and `aligned_resource` fields
+- **Alignment Support**: Organization ID (`/api/organization/{id}`) or Device ID (`/api/device/{id}`)
+- **Default Alignment**: System default (`/api/organization/0`)
+- **Configuration Format**: `service_token|alignment|fields|message`
 - **Retry Logic**: Exponential backoff for failed API calls
 
 ### Queue Management
@@ -428,9 +430,16 @@ log_rotation = daily
 - ✅ **Professional UI/UX**: Bootstrap 5 responsive interface with modern design patterns
 - ✅ **Production-Ready**: Clean codebase, error handling, and automatic backups
 
-🔐 **Phase 6**: Webhook Security & Tokenization (COMPLETED)
-- ✅ **Token-Based Authentication**: 32-character cryptographically secure tokens per configuration
-- ✅ **Multiple Configurations**: Support multiple webhook configs per service type
+🎯 **Phase 6**: SL1 Alignment & Enhanced Security (COMPLETED)
+- ✅ **SL1 Alignment Configuration**: Organization/Device ID selection via modal interface
+- ✅ **Tokenized Webhook URLs**: Unique tokens per configuration for enhanced security
+- ✅ **New Configuration Format**: `service_token|alignment|fields|message` with backward compatibility
+- ✅ **Enhanced SL1 Integration**: Dynamic `aligned_resource` parameter in SL1 API calls
+- ✅ **Copy Token Feature**: Dedicated button to copy tokens for external use
+- ✅ **Case Sensitivity Fixes**: Proper lowercase URL generation matching backend processing
+- ✅ **Automatic Cleanup**: Remove webhook log directories when deleting last config for service type
+- ✅ **Configuration Management**: SL1 Alignment column in configuration table
+
 - ✅ **Secure URL Format**: `https://domain.com/webhook/{service}/{token}` endpoint structure
 - ✅ **Smart Modal UX**: Wide confirmation modal for new configs, no popup for edits
 - ✅ **Token Preservation**: Edit mode preserves existing tokens, only updates templates
@@ -592,11 +601,15 @@ WEB_INTERFACE_ENABLED=true
 A comprehensive web-based interface for configuring GenHook webhooks without manual file editing.
 
 ### Key Features
-- **Visual Field Selection**: Interactive tree view of JSON payload fields
-- **Live Preview**: Real-time message generation preview
-- **Template Builder**: Guided template creation with variable suggestions  
-- **Configuration Management**: Safe config updates with backup and rollback
+- **Visual Field Selection**: Interactive tree view of JSON payload fields with hierarchical display
+- **SL1 Alignment Configuration**: Modal interface for Organization/Device ID selection
+- **Live Preview**: Real-time message generation preview with actual payload testing
+- **Template Builder**: Guided template creation with variable suggestions
+- **Tokenized Security**: Unique tokens per webhook configuration for enhanced security
+- **Configuration Management**: Safe config updates with automatic backup and rollback
 - **Dynamic Loading**: Configuration changes take effect immediately without service restarts
+- **Copy Functions**: Dedicated buttons for copying webhook URLs and tokens
+- **Automatic Cleanup**: Remove webhook log directories when deleting configurations
 
 ### Architecture
 - **Framework**: FastAPI + Jinja2 templates + Vanilla JavaScript

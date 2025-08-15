@@ -9,6 +9,9 @@ GenHook is a production-ready webhook processing system that receives webhooks f
 - **🔧 Configuration-Driven**: No code changes needed for new webhook types
 - **⚡ Multi-Service Support**: GitHub, Stripe, Slack, AWS EventBridge, and more  
 - **📝 Template-Based Messaging**: Flexible message generation with variable substitution
+- **🎯 SL1 Alignment**: Configure Organization/Device ID alignment for precise SL1 targeting
+- **🔐 Tokenized Security**: Unique tokens per webhook configuration for enhanced security
+- **🌐 Web Configuration Interface**: Visual field selection and configuration management
 - **🔒 SL1 Integration**: Direct API integration with retry logic and error handling
 - **🏗️ Production-Ready**: Nginx proxy, process management, comprehensive logging
 - **📊 Extensible**: Easy to add new webhook sources and message templates
@@ -20,13 +23,14 @@ Internet → Nginx → GenHook FastAPI → Field Extractor → Template Engine �
 ```
 
 ### Processing Pipeline
-1. **Reception**: HTTP webhook received at `/webhook/{service}`
-2. **Identification**: Service type identified from URL path
-3. **Configuration Lookup**: Load field patterns and templates from config
+1. **Reception**: HTTP webhook received at `/webhook/{service}/{token}`
+2. **Authentication**: Token validation and service identification
+3. **Configuration Lookup**: Load field patterns, templates, and SL1 alignment from config
 4. **Field Extraction**: Extract specified fields from JSON payload
 5. **Message Generation**: Process templates with extracted data
-6. **SL1 API Call**: Send formatted alert to SL1 monitoring system
-7. **Error Handling**: Retry logic with exponential backoff
+6. **SL1 Alignment**: Apply Organization/Device ID alignment for precise targeting
+7. **SL1 API Call**: Send formatted alert to SL1 monitoring system with alignment
+8. **Error Handling**: Retry logic with exponential backoff
 
 ## 🚀 Quick Start
 
@@ -56,11 +60,22 @@ python main.py
 ```
 
 Server runs at: http://localhost:8000
+Web interface at: http://localhost:8000/config
 API docs at: http://localhost:8000/docs
+
+### Configure Webhooks via Web Interface
+1. Open http://localhost:8000/config
+2. Enter webhook type (e.g., "github")
+3. Paste sample JSON payload from your webhook source
+4. Select fields to extract using the visual tree interface
+5. Build message template with variable substitution
+6. Configure SL1 alignment (Organization/Device ID or System Default)
+7. Save configuration to get webhook URL with unique token
 
 ### Test Webhook Processing
 ```bash
-curl -X POST http://localhost:8000/webhook/github \
+# Use the tokenized URL from web interface
+curl -X POST http://localhost:8000/webhook/github/abc123token \
   -H 'Content-Type: application/json' \
   -d '{
     "action": "opened",
@@ -77,22 +92,35 @@ Expected response:
 {
   "status": "success",
   "message": "Webhook processed and alert sent to SL1",
-  "generated_message": "MAJOR: GitHub opened on TestRepo: \"Test PR\" by testuser"
+  "generated_message": "github|abc123token|MAJOR: GitHub opened on TestRepo: \"Test PR\" by testuser",
+  "service_token": "github:abc123token"
 }
 ```
 
 ## 📖 Configuration
 
 ### Webhook Configuration (`config/webhook-config.ini`)
+
+**New Format with SL1 Alignment:**
 ```ini
 [webhooks]
-# Format: service = field1,field2,nested{subfield}::Template with $variables$
+# Format: service_token|alignment|fields|message template
+# alignment: org:ID, device:ID, or empty for system default
 
+# GitHub webhook with Organization alignment
+github_token123|org:42|action,pull_request{title,user{login}},repository{name}|GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
+
+# Meraki webhook with Device alignment (common for network devices)
+meraki_token789|device:24|alertType,alertLevel,deviceName|Meraki $alertLevel$: $alertType$ on device $deviceName$
+
+# Stripe webhook with system default alignment
+stripe_tokenabc||data{object}{amount,currency,status}|Payment: $data.object.currency$ $data.object.amount$ - $data.object.status$
+```
+
+**Legacy Format (still supported):**
+```ini
+[webhooks]
 github = action,pull_request{title,user{login}},repository{name}::MAJOR: GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
-
-stripe = type,data{object{amount,currency,status}}::Stripe $type$: Payment of $data.object.amount$ $data.object.currency$ status: $data.object.status$
-
-slack = event{type,user,text}::Slack $event.type$ from user $event.user$: "$event.text$"
 ```
 
 ### Application Configuration (`config/app-config.ini`)
@@ -181,6 +209,14 @@ python test_sl1_integration.py
 - [x] JSON field extraction engine  
 - [x] Template processing system
 - [x] Basic SL1 API integration
+
+### ✅ Phase 5: Web Configuration Interface (Complete)
+- [x] Visual field selection from JSON payloads
+- [x] Real-time webhook configuration testing
+- [x] SL1 alignment configuration (Organization/Device ID)
+- [x] Tokenized webhook URLs for enhanced security
+- [x] Dynamic configuration loading without restarts
+- [x] Automatic webhook log directory cleanup
 
 ### 🟡 Phase 2: Multi-Threading (Planned)
 - [ ] Thread pool implementation
