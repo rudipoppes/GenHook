@@ -167,6 +167,7 @@
                                     <tr>
                                         <th>Service</th>
                                         <th>Token</th>
+                                        <th>SL1 Alignment</th>
                                         <th>Template Preview</th>
                                         <th>Actions</th>
                                     </tr>
@@ -380,6 +381,62 @@
                     <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                 </div>
                 <div class="toast-body" id="toastMessage"></div>
+            </div>
+        </div>
+
+        <!-- SL1 Alignment Modal -->
+        <div class="modal fade" id="alignmentModal" tabindex="-1" aria-labelledby="alignmentModalLabel" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="alignmentModalLabel">Configure SL1 Alignment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Select how this webhook should align to SL1 resources:</p>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="alignmentType" id="alignSystem" value="system" checked>
+                            <label class="form-check-label" for="alignSystem">
+                                <strong>System Default</strong>
+                                <small class="text-muted d-block">Uses default SL1 configuration</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="alignmentType" id="alignOrg" value="org">
+                            <label class="form-check-label" for="alignOrg">
+                                <strong>Organization ID</strong>
+                                <small class="text-muted d-block">Align to specific organization</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="alignmentType" id="alignDevice" value="device">
+                            <label class="form-check-label" for="alignDevice">
+                                <strong>Device ID</strong>
+                                <small class="text-muted d-block">Align to specific device</small>
+                            </label>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="alignmentId" class="form-label">ID Number</label>
+                            <input type="number" class="form-control" id="alignmentId" placeholder="Enter ID (optional)" disabled>
+                            <small class="form-text text-muted">Required when Organization or Device is selected</small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This setting determines how the webhook aligns to resources in SL1 for event processing.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmAlignment()">
+                            <i class="fas fa-check me-1"></i>Confirm & Save
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -999,6 +1056,29 @@
             }
         }
 
+        // Global variables for alignment settings
+        let pendingAlignment = null;
+        
+        // Handle alignment radio button changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const alignmentRadios = document.querySelectorAll('input[name="alignmentType"]');
+            const alignmentIdField = document.getElementById('alignmentId');
+            
+            alignmentRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Enable/disable ID field based on selection
+                    if (this.value === 'org' || this.value === 'device') {
+                        alignmentIdField.disabled = false;
+                        alignmentIdField.required = true;
+                    } else {
+                        alignmentIdField.disabled = true;
+                        alignmentIdField.required = false;
+                        alignmentIdField.value = '';
+                    }
+                });
+            });
+        });
+        
         async function saveConfiguration() {
             const template = document.getElementById('messageTemplate').value.trim();
             
@@ -1006,6 +1086,34 @@
                 showNotification('Error', 'Please enter a message template', 'error');
                 return;
             }
+            
+            // Show alignment modal first
+            const alignmentModal = new bootstrap.Modal(document.getElementById('alignmentModal'));
+            alignmentModal.show();
+            
+            // Reset alignment settings for new config
+            document.getElementById('alignSystem').checked = true;
+            document.getElementById('alignmentId').value = '';
+            document.getElementById('alignmentId').disabled = true;
+        }
+        
+        async function confirmAlignment() {
+            // Get alignment settings
+            const alignmentType = document.querySelector('input[name="alignmentType"]:checked').value;
+            const alignmentId = document.getElementById('alignmentId').value;
+            
+            // Validate ID if needed
+            if ((alignmentType === 'org' || alignmentType === 'device') && !alignmentId) {
+                showNotification('Error', 'Please enter an ID number for the selected alignment type', 'error');
+                return;
+            }
+            
+            // Hide alignment modal
+            const alignmentModal = bootstrap.Modal.getInstance(document.getElementById('alignmentModal'));
+            alignmentModal.hide();
+            
+            // Continue with saving
+            const template = document.getElementById('messageTemplate').value.trim();
             
             try {
                 let token, isNewConfig;
@@ -1029,6 +1137,15 @@
                 
                 const configLine = selectedFieldsList.join(',') + '::' + template;
                 
+                // Prepare alignment data
+                let alignmentData = {};
+                if (alignmentType !== 'system') {
+                    alignmentData = {
+                        alignment_type: alignmentType,
+                        alignment_id: parseInt(alignmentId)
+                    };
+                }
+                
                 const response = await fetch('/api/save-config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -1036,7 +1153,8 @@
                         webhook_type: currentWebhookType,
                         token: token,
                         config_line: configLine,
-                        create_backup: true
+                        create_backup: true,
+                        ...alignmentData
                     })
                 });
                 
@@ -1118,7 +1236,23 @@
                     tbody.innerHTML = '';
                     
                     Object.entries(result.configurations).forEach(([configKey, configLine]) => {
-                        const [fields, template] = configLine.split('::', 2);
+                        let fields, template, alignment = '';
+                        
+                        // Parse config line - support both old and new formats
+                        if (configLine.includes('::')) {
+                            // Old format: fields::message
+                            [fields, template] = configLine.split('::', 2);
+                        } else {
+                            // New format: alignment|fields|message
+                            const parts = configLine.split('|', 3);
+                            if (parts.length === 3) {
+                                [alignment, fields, template] = parts;
+                            } else {
+                                // Fallback
+                                fields = parts[0] || '';
+                                template = parts[1] || '';
+                            }
+                        }
                         
                         // Parse service and token from config key
                         let service, token;
@@ -1137,11 +1271,25 @@
                             token = 'legacy';
                         }
                         
+                        // Format alignment display
+                        let alignmentDisplay = 'System Default';
+                        if (alignment) {
+                            const [type, id] = alignment.split(':');
+                            if (type === 'org') {
+                                alignmentDisplay = `Organization ${id}`;
+                            } else if (type === 'device') {
+                                alignmentDisplay = `Device ${id}`;
+                            }
+                        }
+                        
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td><code>${service}</code></td>
                             <td class="small">
                                 <code class="text-muted">${token.length > 12 ? token.substring(0, 10) + '...' : token}</code>
+                            </td>
+                            <td class="small">
+                                <span class="badge bg-info">${alignmentDisplay}</span>
                             </td>
                             <td class="small">${template.length > 60 ? template.substring(0, 60) + '...' : template}</td>
                             <td>

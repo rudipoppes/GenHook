@@ -91,14 +91,43 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         
         webhook_config = get_webhook_config()
         
-        # Build the config key with service_token format (lowercase service to match config)
-        config_key = f"{service.lower()}_{token}"
+        # Build the base config key with service_token format (lowercase service to match config)
+        base_config_key = f"{service.lower()}_{token}"
         
-        if config_key not in webhook_config:
+        # Find the matching config key
+        config_key = None
+        config_line = None
+        alignment_type = None
+        alignment_id = None
+        
+        # Check if exact key exists (could be old or new format)
+        if base_config_key in webhook_config:
+            config_key = base_config_key
+            config_line = webhook_config[config_key]
+        
+        if config_key is None:
             raise HTTPException(status_code=404, detail=f"Invalid webhook token for '{service}'")
         
-        config_line = webhook_config[config_key]
-        fields_part, template = config_line.split('::', 1)
+        # Parse config line - support both old and new formats
+        if '::' in config_line:
+            # Old format: fields::message
+            fields_part, template = config_line.split('::', 1)
+        else:
+            # New format: alignment|fields|message
+            parts = config_line.split('|', 2)
+            if len(parts) == 3:
+                alignment_str, fields_part, template = parts
+                # Parse alignment string (e.g., "org:123" or "device:456")
+                if alignment_str and ':' in alignment_str:
+                    alignment_type, alignment_id_str = alignment_str.split(':', 1)
+                    try:
+                        alignment_id = int(alignment_id_str)
+                    except ValueError:
+                        alignment_id = None
+            else:
+                # Fallback parsing
+                fields_part = parts[0] if len(parts) > 0 else ""
+                template = parts[1] if len(parts) > 1 else ""
         
         # Parse fields carefully to handle nested braces
         fields = []
@@ -159,7 +188,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         # Prepend service|token| to the message for SL1 (easy to strip)
         final_message = f"{service.lower()}|{token}|{message}"
         
-        success = await sl1_service.send_alert(final_message)
+        success = await sl1_service.send_alert(final_message, alignment_type, alignment_id)
         
         # Log the processing result
         webhook_logger = get_webhook_logger()

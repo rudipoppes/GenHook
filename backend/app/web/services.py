@@ -326,19 +326,47 @@ class ConfigManager:
         self.backup_dir = self.backend_dir / self.config.backup_directory
     
     def load_current_configs(self) -> Dict[str, str]:
-        """Load current webhook configurations."""
+        """Load current webhook configurations from pipe-separated format."""
         try:
-            from configparser import ConfigParser
-            config = ConfigParser()
+            configs = {}
             
             if self.config_file_path.exists():
-                config.read(str(self.config_file_path))
-                if 'webhooks' in config:
-                    return dict(config['webhooks'])
+                with open(self.config_file_path, 'r') as f:
+                    lines = f.readlines()
+                
+                in_webhooks_section = False
+                for line in lines:
+                    line = line.strip()
+                    
+                    # Skip empty lines and comments
+                    if not line or line.startswith('#'):
+                        continue
+                    
+                    # Check for section header
+                    if line == '[webhooks]':
+                        in_webhooks_section = True
+                        continue
+                    elif line.startswith('[') and line.endswith(']'):
+                        in_webhooks_section = False
+                        continue
+                    
+                    # Parse webhook config lines
+                    if in_webhooks_section:
+                        # Handle both old format (key = value) and new format (key|value)
+                        if '=' in line:
+                            # Old format
+                            key, value = line.split('=', 1)
+                            configs[key.strip()] = value.strip()
+                        elif '|' in line:
+                            # New format: key|alignment|fields|message
+                            parts = line.split('|', 1)
+                            if len(parts) == 2:
+                                configs[parts[0].strip()] = parts[1].strip()
             
-            return {}
+            return configs
             
         except Exception as e:
+            logger.error(f"Error loading configs: {e}")
             return {}
     
     def save_config(
@@ -348,10 +376,10 @@ class ConfigManager:
         create_backup: bool = True
     ) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        Save webhook configuration.
+        Save webhook configuration in pipe-separated format.
         
         Args:
-            webhook_type: Webhook type name
+            webhook_type: Webhook type name (can include alignment)
             config_line: Configuration line to save
             create_backup: Whether to create backup
             
@@ -369,23 +397,20 @@ class ConfigManager:
                     # Continue without backup
                     pass
             
-            # Load current config
-            from configparser import ConfigParser
-            config = ConfigParser()
-            if self.config_file_path.exists():
-                config.read(str(self.config_file_path))
-            
-            # Ensure webhooks section exists
-            if 'webhooks' not in config:
-                config['webhooks'] = {}
+            # Load current configs
+            current_configs = self.load_current_configs()
             
             # Update the specific webhook type
-            config['webhooks'][webhook_type] = config_line
+            current_configs[webhook_type] = config_line
             
-            # Write back to file with explicit error handling
+            # Write back to file in new pipe format
             try:
                 with open(self.config_file_path, 'w') as f:
-                    config.write(f)
+                    f.write("[webhooks]\n")
+                    for key, value in current_configs.items():
+                        # Write in pipe format: key|value
+                        f.write(f"{key}|{value}\n")
+                    f.write("\n")
             except Exception as write_error:
                 return False, backup_file, f"Failed to write config file: {str(write_error)}"
             

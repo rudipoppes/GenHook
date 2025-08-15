@@ -18,12 +18,14 @@ class SL1Service:
         if not self.username or not self.password:
             logger.warning("SL1 credentials not configured. Check app-config.ini")
     
-    async def send_alert(self, message: str) -> bool:
+    async def send_alert(self, message: str, alignment_type: Optional[str] = None, alignment_id: Optional[int] = None) -> bool:
         """
         Send alert to SL1 monitoring system
         
         Args:
             message: Human-readable message to send
+            alignment_type: Optional alignment type ('org' or 'device')
+            alignment_id: Optional ID for organization or device alignment
             
         Returns:
             bool: True if successful, False otherwise
@@ -31,6 +33,17 @@ class SL1Service:
         if not self.username or not self.password:
             logger.error("SL1 credentials not configured")
             return False
+        
+        # Build aligned_resource based on alignment parameters
+        if alignment_type == 'org' and alignment_id:
+            aligned_resource = f"/api/organization/{alignment_id}"
+        elif alignment_type == 'device' and alignment_id:
+            aligned_resource = f"/api/device/{alignment_id}"
+        else:
+            # Default to organization 0
+            aligned_resource = "/api/organization/0"
+        
+        logger.info(f"Using SL1 alignment: {aligned_resource}")
         
         payload = {
             "force_ytype": "0",
@@ -40,7 +53,7 @@ class SL1Service:
             "value": "",
             "threshold": "",
             "message_time": "0",
-            "aligned_resource": "/api/organization/0"
+            "aligned_resource": aligned_resource
         }
         
         auth = (self.username, self.password)
@@ -82,11 +95,11 @@ class SL1Service:
         logger.error(f"Failed to send alert to SL1 after {self.retry_attempts} attempts")
         return False
     
-    def send_alert_sync(self, message: str) -> bool:
+    def send_alert_sync(self, message: str, alignment_type: Optional[str] = None, alignment_id: Optional[int] = None) -> bool:
         """
         Synchronous wrapper for send_alert
         """
-        return asyncio.run(self.send_alert(message))
+        return asyncio.run(self.send_alert(message, alignment_type, alignment_id))
 
 # Global instance
 sl1_service = SL1Service()

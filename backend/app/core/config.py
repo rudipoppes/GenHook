@@ -211,12 +211,7 @@ def get_config():
 
 def get_webhook_config():
     """Get webhook configurations as a simple dict for backward compatibility."""
-    from configparser import ConfigParser
-    config = ConfigParser()
-    backend_dir = Path(__file__).parent.parent.parent
-    webhook_config_path = backend_dir / "config" / "webhook-config.ini"
-    config.read(str(webhook_config_path))
-    
-    if 'webhooks' in config:
-        return dict(config['webhooks'])
-    return {}
+    # Use the new ConfigManager to load pipe-separated format
+    from ..web.services import ConfigManager
+    config_manager = ConfigManager()
+    return config_manager.load_current_configs()

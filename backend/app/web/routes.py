@@ -223,13 +223,32 @@ async def save_config(request: ConfigSaveRequest, http_request: Request):
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     try:
-        # Build the config key with service_token format
-        config_key = f"{request.webhook_type}_{request.token}"
+        # Build the config key with service_token|alignment format
+        base_config_key = f"{request.webhook_type}_{request.token}"
         
-        # Save the configuration with tokenized key
+        # Build alignment string for key
+        alignment_str = ""
+        if request.alignment_type and request.alignment_type != 'system':
+            alignment_str = f"{request.alignment_type}:{request.alignment_id}"
+        
+        # Build the full config key: service_token|alignment
+        config_key = f"{base_config_key}|{alignment_str}"
+        
+        # Build the config value
+        # The config_line already contains fields::message, we need to convert it
+        if '::' in request.config_line:
+            fields_part, message_part = request.config_line.split('::', 1)
+        else:
+            # Already in new format or invalid
+            fields_part, message_part = request.config_line, ""
+        
+        # Build new format config value: fields|message
+        new_config_line = f"{fields_part}|{message_part}"
+        
+        # Save the configuration with extended key
         success, backup_file, error_msg = config_manager.save_config(
             config_key,
-            request.config_line,
+            new_config_line,
             request.create_backup
         )
         
@@ -310,8 +329,22 @@ async def get_config(service: str, token: str, request: Request):
         raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")
     
     config_line = configurations[config_key]
-    fields_part, template = config_line.split('::', 1)
-    fields = [f.strip() for f in fields_part.split(',')]
+    
+    # Parse config line - support both old and new formats
+    if '::' in config_line:
+        # Old format: fields::message
+        fields_part, template = config_line.split('::', 1)
+    else:
+        # New format: alignment|fields|message
+        parts = config_line.split('|', 2)
+        if len(parts) == 3:
+            alignment_str, fields_part, template = parts
+        else:
+            # Fallback
+            fields_part = parts[0] if len(parts) > 0 else ""
+            template = parts[1] if len(parts) > 1 else ""
+    
+    fields = [f.strip() for f in fields_part.split(',') if f.strip()]
     
     # Get base URL dynamically from request
     base_url = f"{request.url.scheme}://{request.url.netloc}"
@@ -335,34 +368,34 @@ async def delete_config(service: str, token: str):
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     try:
-        from configparser import ConfigParser
-        
-        config_file_path = config_manager.config_file_path
-        
-        if not config_file_path.exists():
-            raise HTTPException(status_code=404, detail="Configuration file not found")
-        
-        config = ConfigParser()
-        config.read(str(config_file_path))
-        
         # Build config key
         config_key = f"{service}_{token}"
         
-        if 'webhooks' not in config or config_key not in config['webhooks']:
+        # Load current configs using new format
+        current_configs = config_manager.load_current_configs()
+        
+        # Check if config exists
+        if config_key not in current_configs:
             raise HTTPException(status_code=404, detail=f"Configuration '{config_key}' not found")
         
         # Create backup before deletion
         if web_config.backup_configs:
-            config_manager._create_backup()
+            try:
+                config_manager._create_backup()
+            except Exception:
+                pass  # Continue even if backup fails
         
         # Remove the configuration
-        del config['webhooks'][config_key]
+        del current_configs[config_key]
         
-        # Write back to file
-        with open(config_file_path, 'w') as f:
-            config.write(f)
+        # Write back to file in new pipe format
+        with open(config_manager.config_file_path, 'w') as f:
+            f.write("[webhooks]\n")
+            for key, value in current_configs.items():
+                f.write(f"{key}|{value}\n")
+            f.write("\n")
         
-        return {"success": True, "message": f"Configuration '{config_key}' deleted"}
+        return {"success": True, "message": f"Configuration '{service}:{token}' deleted successfully"}
         
     except HTTPException:
         raise

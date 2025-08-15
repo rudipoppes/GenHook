@@ -80,6 +80,8 @@ class ConfigSaveRequest(BaseModel):
     token: str = Field(..., description="Unique token for this webhook configuration")
     config_line: str = Field(..., description="Configuration line to save")
     create_backup: bool = Field(True, description="Whether to create backup before saving")
+    alignment_type: Optional[str] = Field(None, description="SL1 alignment type: 'org', 'device', or None")
+    alignment_id: Optional[int] = Field(None, description="SL1 alignment ID for organization or device")
 
 
 class ConfigSaveResponse(BaseModel):
