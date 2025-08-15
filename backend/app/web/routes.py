@@ -2,6 +2,7 @@
 FastAPI routes for the web configuration interface.
 """
 import json
+import logging
 import re
 from typing import Dict, Any
 
@@ -33,6 +34,9 @@ web_config = get_web_config()
 
 # Templates will be configured by main app
 templates = None
+
+# Logger
+logger = logging.getLogger(__name__)
 
 # Service instances
 payload_analyzer = PayloadAnalyzer()
@@ -388,12 +392,38 @@ async def delete_config(service: str, token: str):
         # Remove the configuration
         del current_configs[config_key]
         
+        # Check if this was the last config for this service type
+        service_configs_remaining = [key for key in current_configs.keys() if key.startswith(f"{service}_")]
+        
         # Write back to file in new pipe format
         with open(config_manager.config_file_path, 'w') as f:
             f.write("[webhooks]\n")
             for key, value in current_configs.items():
                 f.write(f"{key}|{value}\n")
             f.write("\n")
+        
+        # If no more configs for this service type, remove the webhook log directory
+        if not service_configs_remaining:
+            try:
+                from ..services.webhook_logger import get_webhook_logger
+                import shutil
+                from pathlib import Path
+                
+                webhook_logger = get_webhook_logger()
+                if webhook_logger and webhook_logger.enabled:
+                    # Remove the entire webhook type directory
+                    webhook_dir = webhook_logger.base_dir / service
+                    if webhook_dir.exists() and webhook_dir.is_dir():
+                        shutil.rmtree(webhook_dir)
+                        logger.info(f"Removed webhook log directory for service type: {service}")
+                        
+                        # Also remove the cached logger to prevent issues
+                        if service in webhook_logger._loggers:
+                            del webhook_logger._loggers[service]
+                            
+            except Exception as e:
+                # Log the error but don't fail the deletion
+                logger.warning(f"Failed to remove webhook log directory for {service}: {e}")
         
         return {"success": True, "message": f"Configuration '{service}:{token}' deleted successfully"}
         
