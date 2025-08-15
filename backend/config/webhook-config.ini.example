@@ -1,9 +1,28 @@
 [webhooks]
-github = action,pull_request{title,user{login}},repository{name}::MAJOR: GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
-aws = detail-type,source,region,detail{instance-id,state}::AWS $detail-type$ from $source$ in $region$: Instance $detail.instance-id$ state: $detail.state$
-meraki = alertType,alertLevel,deviceName,deviceSerial,networkName,networkUrl::Meraki $alertLevel$: $alertType$ on device $deviceName$ (Serial: $deviceSerial$) in network $networkName$
-jira = issue{fields{summary}}, issue{fields{priority}},issue{fields{description}}::Jira $issue.fields.priority$ $issue.fields.summary$ : $issue.fields.description$
-gisual = device,incident,status,utility,etr::Gisual Alert - $device$ for incident: $incident$ for utility $utility$ $status$. Est Restore Time: $etr$
-slack = event{user},event{text}::Slack says: $event.user$  $event.text$
-stripe = data{object}{amount},data{object}{currency},data{object}{status}::$data.object.currency$ $data.object.amount$    $data.object.status$
+# New format: service_token|alignment|fields|message
+# alignment: org:ID, device:ID, or empty for system default
+
+# GitHub webhook with Organization alignment
+github_token123|org:42|action,pull_request{title,user{login}},repository{name}|GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
+
+# AWS webhook with Device alignment
+aws_token456|device:999|detail-type,source,region,detail{instance-id,state}|AWS $detail-type$ from $source$ in $region$: Instance $detail.instance-id$ state: $detail.state$
+
+# Meraki webhook with Device alignment (common for network devices)
+meraki_token789|device:24|alertType,alertLevel,deviceName,deviceSerial,networkName,networkUrl|Meraki $alertLevel$: $alertType$ on device $deviceName$ (Serial: $deviceSerial$) in network $networkName$
+
+# Jira webhook with Organization alignment
+jira_tokenabc|org:100|issue{fields{summary}},issue{fields{priority}},issue{fields{description}}|Jira $issue.fields.priority$ $issue.fields.summary$: $issue.fields.description$
+
+# Gisual webhook with system default alignment (no alignment specified)
+gisual_tokendef||device,incident,status,utility,etr|Gisual Alert - $device$ for incident: $incident$ for utility $utility$ $status$. Est Restore Time: $etr$
+
+# Slack webhook with Organization alignment
+slack_tokenghi|org:5|event{user},event{text}|Slack says: $event.user$ $event.text$
+
+# Stripe webhook with Organization alignment (financial data)
+stripe_tokenjkl|org:200|data{object}{amount},data{object}{currency},data{object}{status}|Payment: $data.object.currency$ $data.object.amount$ - $data.object.status$
+
+# Legacy format (still supported for backward compatibility)
+# legacy_webhook = fields::message template
 
