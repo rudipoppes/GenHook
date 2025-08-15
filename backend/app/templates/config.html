@@ -1058,6 +1058,7 @@
 
         // Global variables for alignment settings
         let pendingAlignment = null;
+        let currentAlignment = { type: 'system', id: null };
         
         // Handle alignment radio button changes
         document.addEventListener('DOMContentLoaded', function() {
@@ -1091,10 +1092,31 @@
             const alignmentModal = new bootstrap.Modal(document.getElementById('alignmentModal'));
             alignmentModal.show();
             
-            // Reset alignment settings for new config
-            document.getElementById('alignSystem').checked = true;
-            document.getElementById('alignmentId').value = '';
-            document.getElementById('alignmentId').disabled = true;
+            // Pre-populate alignment settings based on mode
+            if (isEditMode && currentAlignment) {
+                // In edit mode, use existing alignment values
+                const alignmentType = currentAlignment.type;
+                const alignmentId = currentAlignment.id;
+                
+                if (alignmentType === 'org') {
+                    document.getElementById('alignOrg').checked = true;
+                    document.getElementById('alignmentId').disabled = false;
+                    document.getElementById('alignmentId').value = alignmentId || '';
+                } else if (alignmentType === 'device') {
+                    document.getElementById('alignDevice').checked = true;
+                    document.getElementById('alignmentId').disabled = false;
+                    document.getElementById('alignmentId').value = alignmentId || '';
+                } else {
+                    document.getElementById('alignSystem').checked = true;
+                    document.getElementById('alignmentId').disabled = true;
+                    document.getElementById('alignmentId').value = '';
+                }
+            } else {
+                // New config mode, reset to defaults
+                document.getElementById('alignSystem').checked = true;
+                document.getElementById('alignmentId').value = '';
+                document.getElementById('alignmentId').disabled = true;
+            }
         }
         
         async function confirmAlignment() {
@@ -1187,6 +1209,7 @@
             currentWebhookType = '';
             currentToken = '';
             isEditMode = false;
+            currentAlignment = { type: 'system', id: null };
             
             // Clear all form fields
             document.getElementById('webhookType').value = '';
@@ -1329,6 +1352,12 @@
                     isEditMode = true;
                     currentWebhookType = service;
                     currentToken = token;
+                    
+                    // Store current alignment for edit mode
+                    currentAlignment = {
+                        type: result.alignment_type || 'system',
+                        id: result.alignment_id || null
+                    };
                     
                     document.getElementById('webhookType').value = service;
                     document.getElementById('messageTemplate').value = result.message_template;

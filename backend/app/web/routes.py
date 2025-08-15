@@ -335,6 +335,9 @@ async def get_config(service: str, token: str, request: Request):
     config_line = configurations[config_key]
     
     # Parse config line - support both old and new formats
+    alignment_type = None
+    alignment_id = None
+    
     if '::' in config_line:
         # Old format: fields::message
         fields_part, template = config_line.split('::', 1)
@@ -343,6 +346,13 @@ async def get_config(service: str, token: str, request: Request):
         parts = config_line.split('|', 2)
         if len(parts) == 3:
             alignment_str, fields_part, template = parts
+            # Parse alignment string (e.g., "org:123" or "device:456")
+            if alignment_str and ':' in alignment_str:
+                alignment_type, alignment_id_str = alignment_str.split(':', 1)
+                try:
+                    alignment_id = int(alignment_id_str)
+                except ValueError:
+                    alignment_id = None
         else:
             # Fallback
             fields_part = parts[0] if len(parts) > 0 else ""
@@ -361,7 +371,9 @@ async def get_config(service: str, token: str, request: Request):
         "webhook_url": webhook_url,
         "fields": fields,
         "message_template": template,
-        "config_line": config_line
+        "config_line": config_line,
+        "alignment_type": alignment_type,
+        "alignment_id": alignment_id
     }
 
 
