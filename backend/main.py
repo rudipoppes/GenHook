@@ -212,7 +212,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
                 "status": "success", 
                 "message": "Webhook processed and alert sent to SL1",
                 "generated_message": final_message,
-                "service_token": f"{service.lower()}:{token}"
+                "service_token": f"{service}:{token}"
             }
         else:
             logger.error(f"Failed to send {service.lower()}:{token} webhook to SL1")
@@ -220,7 +220,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
                 "status": "error",
                 "message": "Webhook processed but failed to send to SL1",
                 "generated_message": final_message,
-                "service_token": f"{service.lower()}:{token}"
+                "service_token": f"{service}:{token}"
             }
             
     except ValueError as e:
