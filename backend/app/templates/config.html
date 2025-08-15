@@ -1194,7 +1194,7 @@
                     // Force complete reset and refresh
                     resetWizard();
                     loadConfigurations();
-                    refreshSidebarRecentPayloads();
+                    refreshSidebarData();
                 } else {
                     showNotification('Error', result.error_message, 'error');
                 }
@@ -1434,7 +1434,7 @@
                 if (response.ok) {
                     showNotification('Success', `Webhook '${service}:${token}' deleted`, 'success');
                     loadConfigurations();
-                    refreshSidebarRecentPayloads();
+                    refreshSidebarData();
                 } else {
                     showNotification('Error', result.detail || 'Delete failed', 'error');
                 }
@@ -1588,13 +1588,24 @@
             }
         }
         
-        function refreshSidebarRecentPayloads() {
-            // Get current selected webhook type in sidebar
+        function refreshSidebarData() {
+            // Get current selected webhook type in sidebar before refreshing dropdown
             const sidebarWebhookTypeSelect = document.getElementById('sidebarWebhookTypeSelect');
-            if (sidebarWebhookTypeSelect && sidebarWebhookTypeSelect.value) {
-                // Reload recent payloads for currently selected webhook type
-                loadSidebarRecentPayloads(sidebarWebhookTypeSelect.value);
-            }
+            const currentSelectedType = sidebarWebhookTypeSelect ? sidebarWebhookTypeSelect.value : null;
+            
+            // Reload webhook types dropdown first
+            loadSidebarWebhookTypes().then(() => {
+                // After dropdown is reloaded, restore selection and reload recent payloads if applicable
+                if (currentSelectedType && sidebarWebhookTypeSelect) {
+                    // Try to restore previous selection (webhook type might still exist)
+                    sidebarWebhookTypeSelect.value = currentSelectedType;
+                    
+                    // If selection was restored, reload recent payloads
+                    if (sidebarWebhookTypeSelect.value === currentSelectedType) {
+                        loadSidebarRecentPayloads(currentSelectedType);
+                    }
+                }
+            });
         }
 
         async function loadSidebarRecentPayloads(webhookType) {
