@@ -1194,6 +1194,7 @@
                     // Force complete reset and refresh
                     resetWizard();
                     loadConfigurations();
+                    refreshSidebarRecentPayloads();
                 } else {
                     showNotification('Error', result.error_message, 'error');
                 }
@@ -1433,6 +1434,7 @@
                 if (response.ok) {
                     showNotification('Success', `Webhook '${service}:${token}' deleted`, 'success');
                     loadConfigurations();
+                    refreshSidebarRecentPayloads();
                 } else {
                     showNotification('Error', result.detail || 'Delete failed', 'error');
                 }
@@ -1586,6 +1588,15 @@
             }
         }
         
+        function refreshSidebarRecentPayloads() {
+            // Get current selected webhook type in sidebar
+            const sidebarWebhookTypeSelect = document.getElementById('sidebarWebhookTypeSelect');
+            if (sidebarWebhookTypeSelect && sidebarWebhookTypeSelect.value) {
+                // Reload recent payloads for currently selected webhook type
+                loadSidebarRecentPayloads(sidebarWebhookTypeSelect.value);
+            }
+        }
+
         async function loadSidebarRecentPayloads(webhookType) {
             try {
                 const response = await fetch(`/api/webhook-logs/${webhookType}/recent?limit=10`);
