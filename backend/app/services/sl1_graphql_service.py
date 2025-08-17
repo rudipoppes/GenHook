@@ -72,7 +72,7 @@ class SL1GraphQLService:
         # Note: The identifierPattern uses 4 backslashes to properly escape in GraphQL
         mutation = """
         mutation CreateEventPolicy {
-          eventPolicyCreate(
+          createEventPolicy(
             message: "%%I"
             messageMatch: false
             identifierPattern: ".*\\\\|.*\\\\|(.*)"
@@ -83,7 +83,7 @@ class SL1GraphQLService:
             regularExpression1: "%s"
             regularExpression2: ""
             regularExpressionSearch: true
-            severity: %d
+            severity: "%d"
           ) {
             id
           }
@@ -177,7 +177,7 @@ class SL1GraphQLService:
             Formatted GraphQL mutation string
         """
         mutation = """mutation CreateEventPolicy {
-  eventPolicyCreate(
+  createEventPolicy(
     message: "%%I"
     messageMatch: false
     identifierPattern: ".*\\\\|.*\\\\|(.*)"
@@ -188,7 +188,7 @@ class SL1GraphQLService:
     regularExpression1: "%s"
     regularExpression2: ""
     regularExpressionSearch: true
-    severity: %d
+    severity: "%d"
   ) {
     id
   }
