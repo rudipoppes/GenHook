@@ -73,7 +73,7 @@ class SL1GraphQLService:
         mutation = """
         mutation CreateEventPolicy {
           eventPolicyCreate(
-            message: "%I"
+            message: "%%I"
             messageMatch: false
             identifierPattern: ".*\\\\|.*\\\\|(.*)"
             enabled: true
@@ -178,7 +178,7 @@ class SL1GraphQLService:
         """
         mutation = """mutation CreateEventPolicy {
   eventPolicyCreate(
-    message: "%I"
+    message: "%%I"
     messageMatch: false
     identifierPattern: ".*\\\\|.*\\\\|(.*)"
     enabled: true
