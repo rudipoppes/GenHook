@@ -1571,6 +1571,13 @@
                 return;
             }
             
+            // Validate severity value
+            const severityInt = parseInt(severity);
+            if (isNaN(severityInt) || severityInt < 1 || severityInt > 4) {
+                showNotification('Error', `Invalid severity value: ${severity}. Must be 1-4.`, 'error');
+                return;
+            }
+            
             // Disable button to prevent double-clicks
             const btn = document.getElementById('createPolicyBtn');
             btn.disabled = true;
@@ -1583,7 +1590,7 @@
                     body: JSON.stringify({
                         service_name: currentSL1Policy.service,
                         token: currentSL1Policy.token,
-                        severity: parseInt(severity)
+                        severity: severityInt
                     })
                 });
                 
