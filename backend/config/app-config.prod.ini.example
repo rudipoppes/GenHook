@@ -53,7 +53,7 @@ log_file_name = payload.log
 # Enable SL1 Event Policy creation via GraphQL
 enabled = true
 # Your production SL1 GraphQL endpoint
-endpoint = https://your-sl1-server.com/graphql
+endpoint = https://your-sl1-server.com/gql
 # Your SL1 credentials (same as [sl1] section)
 username = your_sl1_username
 password = your_sl1_password

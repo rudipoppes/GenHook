@@ -99,7 +99,7 @@ class SL1GraphQLService:
         try:
             async with httpx.AsyncClient(
                 timeout=self.timeout,
-                verify=False  # Disable SSL verification if needed
+                verify=False  # Disable SSL verification to match working SL1 code
             ) as client:
                 response = await client.post(
                     self.endpoint,
