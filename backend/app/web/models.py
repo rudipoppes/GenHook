@@ -127,5 +127,23 @@ class ConfigListResponse(BaseModel):
     error_message: Optional[str] = Field(None, description="Error message if success=False")
 
 
+class SL1EventPolicyRequest(BaseModel):
+    """Request model for creating SL1 Event Policy."""
+    
+    service_name: str = Field(..., description="Service name for the policy (e.g., 'github', 'meraki')")
+    token: str = Field(..., description="Webhook token to match in policy")
+    severity: int = Field(..., description="Severity level (1=Notice, 2=Minor, 3=Major, 4=Critical)")
+
+
+class SL1EventPolicyResponse(BaseModel):
+    """Response model for SL1 Event Policy creation."""
+    
+    success: bool = Field(..., description="Whether policy creation was successful")
+    policy_id: Optional[str] = Field(None, description="Created policy ID if successful")
+    message: Optional[str] = Field(None, description="Success message")
+    error: Optional[str] = Field(None, description="Error message if failed")
+    graphql_preview: Optional[str] = Field(None, description="GraphQL mutation preview")
+
+
 # Update forward references for recursive models
 FieldInfo.model_rebuild()

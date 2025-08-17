@@ -21,10 +21,13 @@ from .models import (
     WebhookTestRequest,
     WebhookTestResponse,
     ConfigListResponse,
+    SL1EventPolicyRequest,
+    SL1EventPolicyResponse,
 )
 from .services import PayloadAnalyzer, ConfigGenerator, ConfigManager
 from ..services.webhook_logger import get_webhook_logger
 from ..services.token_generator import generate_unique_token
+from ..services.sl1_graphql_service import sl1_graphql_service
 
 # Create router
 router = APIRouter()
@@ -503,3 +506,85 @@ async def get_available_webhook_types():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving webhook types: {str(e)}")
+
+
+@router.post("/api/sl1/create-event-policy", response_model=SL1EventPolicyResponse)
+async def create_sl1_event_policy(request: SL1EventPolicyRequest):
+    """Create an SL1 Event Policy via GraphQL."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    # Check if SL1 GraphQL is enabled
+    if not sl1_graphql_service.enabled:
+        return SL1EventPolicyResponse(
+            success=False,
+            error="SL1 GraphQL feature is not enabled or configured. Check app-config.ini [sl1_graphql] section."
+        )
+    
+    # Validate severity
+    if request.severity not in [1, 2, 3, 4]:
+        return SL1EventPolicyResponse(
+            success=False,
+            error=f"Invalid severity: {request.severity}. Must be 1-4 (1=Notice, 2=Minor, 3=Major, 4=Critical)"
+        )
+    
+    try:
+        # Create the event policy
+        result = await sl1_graphql_service.create_event_policy(
+            service_name=request.service_name,
+            token=request.token,
+            severity=request.severity
+        )
+        
+        # Get GraphQL preview for response
+        graphql_preview = sl1_graphql_service.get_graphql_preview(
+            request.service_name,
+            request.token,
+            request.severity
+        )
+        
+        if result["success"]:
+            return SL1EventPolicyResponse(
+                success=True,
+                policy_id=result.get("policy_id"),
+                message=result.get("message"),
+                graphql_preview=graphql_preview
+            )
+        else:
+            return SL1EventPolicyResponse(
+                success=False,
+                error=result.get("error"),
+                graphql_preview=graphql_preview
+            )
+            
+    except Exception as e:
+        logger.error(f"Unexpected error creating SL1 Event Policy: {e}")
+        return SL1EventPolicyResponse(
+            success=False,
+            error=f"Unexpected error: {str(e)}"
+        )
+
+
+@router.get("/api/sl1/graphql-preview")
+async def get_graphql_preview(service: str, token: str, severity: int):
+    """Get a preview of the GraphQL mutation for creating an SL1 Event Policy."""
+    if not web_config.enabled:
+        raise HTTPException(status_code=404, detail="Web interface disabled")
+    
+    # Validate severity
+    if severity not in [1, 2, 3, 4]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid severity: {severity}. Must be 1-4 (1=Notice, 2=Minor, 3=Major, 4=Critical)"
+        )
+    
+    graphql_preview = sl1_graphql_service.get_graphql_preview(service, token, severity)
+    
+    return {
+        "success": True,
+        "graphql": graphql_preview,
+        "service": service,
+        "token": token,
+        "severity": severity,
+        "severity_name": {1: "Notice", 2: "Minor", 3: "Major", 4: "Critical"}.get(severity, "Unknown")
+    }
