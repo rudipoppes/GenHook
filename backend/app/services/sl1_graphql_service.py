@@ -68,6 +68,9 @@ class SL1GraphQLService:
                 "error": f"Invalid severity: {severity}. Must be 1-4 (1=Notice, 4=Critical)"
             }
         
+        # Debug logging
+        logger.info(f"Creating Event Policy with severity={severity} (type: {type(severity)})")
+        
         # Build the GraphQL mutation
         # Note: The identifierPattern uses 4 backslashes to properly escape in GraphQL
         mutation = """
@@ -95,6 +98,10 @@ class SL1GraphQLService:
             "query": mutation,
             "variables": {}
         }
+        
+        # Debug logging
+        logger.info(f"GraphQL mutation: {mutation}")
+        logger.info(f"GraphQL request: {json.dumps(graphql_request, indent=2)}")
         
         try:
             async with httpx.AsyncClient(
