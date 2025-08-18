@@ -145,7 +145,7 @@ GenHook implements a comprehensive token-based security system for webhook endpo
 - **Unique Tokens**: Each webhook configuration gets a 32-character cryptographically secure token
 - **URL Format**: `https://your-domain.com/webhook/{service}/{token}`
 - **Multiple Configs**: Support multiple webhook configurations per service type
-- **Token Validation**: Incoming webhooks validated against stored tokens before processing
+- **Token Validation**: Incoming webhooks validated against stored tokens before processing (returns 404 for invalid tokens)
 
 #### 2. **Secure Token Generation**
 - **Algorithm**: Uses Python's `secrets` module for cryptographic security
@@ -153,11 +153,15 @@ GenHook implements a comprehensive token-based security system for webhook endpo
 - **Uniqueness**: Automatic uniqueness validation across all existing configurations
 - **Generation Timing**: Tokens generated only when saving new configurations
 
-#### 3. **Configuration Format**
+#### 3. **Configuration Format (Enhanced)**
 ```ini
-# Format: service_token = fields::template
+# Current format: service_token|alignment|fields|message
+# Alignment can be org:ID or device:ID for SL1 routing
+meraki_5p1lhz7leoixg1w23h2d7nfcanwcip9p|device:24|networkName,deviceName,alertType|Alert: $networkName$ $deviceName$ $alertType$
+github_jii4g57knoli0ng0qqrf9lw28vnotw0m|org:1|pull_request{title},pull_request{user}{login}|PR: $pull_request.title$ by $pull_request.user.login$
+
+# Legacy format (still supported): service_token = fields::template
 github_abc123xyz = action,repository{name}::GitHub $action$ on $repository.name$
-stripe_def456uvw = data{object}{amount}::Payment of $data.object.amount$
 ```
 
 ### User Experience
@@ -185,9 +189,10 @@ stripe_def456uvw = data{object}{amount}::Payment of $data.object.amount$
 
 #### **Backend Architecture:**
 - **Endpoint**: `/webhook/{service}/{token}` validates token before processing
-- **Config Storage**: `service_token = fields::template` format in INI files
+- **Config Storage**: Pipe-delimited format `service_token|alignment|fields|message` in INI files
 - **Token Service**: Dedicated service for generation and uniqueness validation
 - **Message Format**: SL1 messages include `service:token:` prefix for source identification
+- **Backward Compatibility**: Automatically detects and supports both old `::` and new `|` formats
 
 #### **Security Considerations:**
 - **ConfigParser Compatible**: Uses underscore separator to avoid INI parsing conflicts
@@ -234,14 +239,18 @@ stripe_def456uvw = data{object}{amount}::Payment of $data.object.amount$
 - **Shopify**: Orders, Customers, Products, Inventory
 
 ### Configuration Format
-Each webhook configuration uses tokenized INI syntax:
+Each webhook configuration uses pipe-delimited INI syntax with SL1 alignment support:
 ```ini
-# Tokenized format (current)
-service_token = field1,field2,nested{subfield}::Message template with $variables$
+# Current format: service_token|alignment|fields|message
+# Alignment options: org:ID, device:ID, or empty for default
+service_token|alignment|fields|message
 
 # Examples:
+meraki_5p1lhz7leoixg1w23h2d7nfcanwcip9p|device:24|networkName,deviceName,alertType|Alert: $networkName$ $deviceName$ $alertType$
+github_jii4g57knoli0ng0qqrf9lw28vnotw0m|org:1|pull_request{title},pull_request{user}{login}|PR: $pull_request.title$ by $pull_request.user.login$
+
+# Legacy format (still supported):
 github_abc123xyz = action,repository{name}::GitHub $action$ on $repository.name$
-stripe_def456uvw = data{object}{amount}::Stripe payment of $data.object.amount$
 ```
 
 ### Field Extraction Patterns
@@ -287,11 +296,14 @@ meraki_max_concurrent = 25
 ### SL1 Integration
 - **API Endpoint**: `POST /api/alert`
 - **Authentication**: HTTP Basic Auth (username/password)
-- **Payload Format**: Simplified JSON with `message` and `aligned_resource` fields
-- **Alignment Support**: Organization ID (`/api/organization/{id}`) or Device ID (`/api/device/{id}`)
-- **Default Alignment**: System default (`/api/organization/0`)
+- **Payload Format**: JSON with `message` and `aligned_resource` fields
+- **Alignment Support**: 
+  - Organization: `org:ID` → `/api/organization/{ID}`
+  - Device: `device:ID` → `/api/device/{ID}`
+  - Default: Empty/missing → `/api/organization/0`
 - **Configuration Format**: `service_token|alignment|fields|message`
-- **Retry Logic**: Exponential backoff for failed API calls
+- **Message Prefixing**: Messages sent to SL1 include `service:token:` prefix
+- **Retry Logic**: Configurable retry attempts (default: 3) for failed API calls
 
 ### Queue Management
 - **In-Memory**: Low latency, volatile
@@ -433,20 +445,19 @@ log_rotation = daily
 🎯 **Phase 6**: SL1 Alignment & Enhanced Security (COMPLETED)
 - ✅ **SL1 Alignment Configuration**: Organization/Device ID selection via modal interface
 - ✅ **Tokenized Webhook URLs**: Unique tokens per configuration for enhanced security
-- ✅ **New Configuration Format**: `service_token|alignment|fields|message` with backward compatibility
+- ✅ **Enhanced Configuration Format**: Pipe-delimited `service_token|alignment|fields|message` with backward compatibility
 - ✅ **Enhanced SL1 Integration**: Dynamic `aligned_resource` parameter in SL1 API calls
 - ✅ **Copy Token Feature**: Dedicated button to copy tokens for external use
 - ✅ **Case Sensitivity Fixes**: Proper lowercase URL generation matching backend processing
 - ✅ **Automatic Cleanup**: Remove webhook log directories when deleting last config for service type
 - ✅ **Configuration Management**: SL1 Alignment column in configuration table
-
 - ✅ **Secure URL Format**: `https://domain.com/webhook/{service}/{token}` endpoint structure
 - ✅ **Smart Modal UX**: Wide confirmation modal for new configs, no popup for edits
 - ✅ **Token Preservation**: Edit mode preserves existing tokens, only updates templates
-- ✅ **Configuration Format**: `service_token = fields::template` INI-compatible format
+- ✅ **Backward Compatibility**: Supports both legacy `::` and new `|` configuration formats
 - ✅ **Copy-Friendly Interface**: One-click webhook URL copying from table and modal
-- ✅ **Honest Security**: Clear messaging about token accessibility and recovery options
-- ✅ **Production-Tested**: Full tokenization system tested and operational
+- ✅ **Message Prefixing**: SL1 messages include `service:token:` prefix for identification
+- ✅ **Production-Tested**: Full tokenization and alignment system tested and operational
 
 🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
 - 🟡 Thread pool implementation for high-volume processing
@@ -478,7 +489,7 @@ reload = false
 
 **Option 2: Reverse Proxy (Recommended)**
 ```ini
-# Keep default port 8000 in app-config.ini
+# Keep default port 8000 in app-config.ini or create app-config.prod.ini
 # Use nginx/Apache to proxy port 443 → 8000
 [server]
 host = 0.0.0.0
@@ -488,18 +499,18 @@ reload = false
 
 **Option 3: Custom Port**
 ```ini
-# Any port you need
+# Any port you need in app-config.prod.ini
 [server]
 host = 0.0.0.0
 port = 9000  # or any port
 reload = false
 ```
 
-#### Port Configuration Logic
-1. If `app-config.prod.ini` exists → uses production config
-2. Otherwise → uses `app-config.ini` (development)
-3. GenHook automatically detects and uses the appropriate config
-4. **No code modification ever required**
+#### Port Configuration Auto-Detection
+1. **Production Priority**: If `backend/config/app-config.prod.ini` exists → uses production config
+2. **Development Fallback**: Otherwise → uses `backend/config/app-config.ini`
+3. **Automatic Detection**: GenHook automatically detects which config to use (see `backend/app/core/config.py:199-209`)
+4. **No Code Modification Required**: Simply create `app-config.prod.ini` for production settings
 
 #### Endpoint Access
 - **API Endpoints**: `/webhook/{service}` for webhook reception

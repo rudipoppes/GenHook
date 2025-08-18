@@ -396,8 +396,13 @@ services:
 3. **Webhook Configuration (`backend/config/webhook-config.ini`)**
    ```ini
    [webhooks]
-   # Your production webhook configurations
-   github = action,pull_request{title,user{login}},repository{name}::GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
+   # Current format: service_token|alignment|fields|message
+   # Alignment: org:ID, device:ID, or empty for default
+   github_token123|org:1|action,pull_request{title,user{login}},repository{name}|GitHub $action$ on $repository.name$: "$pull_request.title$" by $pull_request.user.login$
+   meraki_token456|device:24|alertType,deviceName|Meraki Alert: $alertType$ on $deviceName$
+   
+   # Legacy format (still supported): service_token = fields::message
+   github_oldtoken = action,repository{name}::GitHub $action$ on $repository.name$
    ```
 
 ## Monitoring and Logging
