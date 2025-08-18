@@ -132,7 +132,7 @@ class SL1EventPolicyRequest(BaseModel):
     
     service_name: str = Field(..., description="Service name for the policy (e.g., 'github', 'meraki')")
     token: str = Field(..., description="Webhook token to match in policy")
-    severity: int = Field(..., description="Severity level (1=Notice, 2=Minor, 3=Major, 4=Critical)")
+    severity: int = Field(..., description="Severity level (0=Healthy, 1=Notice, 2=Minor, 3=Major, 4=Critical)")
 
 
 class SL1EventPolicyResponse(BaseModel):

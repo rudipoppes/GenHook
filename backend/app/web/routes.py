@@ -522,10 +522,10 @@ async def create_sl1_event_policy(request: SL1EventPolicyRequest):
         )
     
     # Validate severity
-    if request.severity not in [1, 2, 3, 4]:
+    if request.severity not in [0, 1, 2, 3, 4]:
         return SL1EventPolicyResponse(
             success=False,
-            error=f"Invalid severity: {request.severity}. Must be 1-4 (1=Notice, 2=Minor, 3=Major, 4=Critical)"
+            error=f"Invalid severity: {request.severity}. Must be 0-4 (0=Healthy, 1=Notice, 2=Minor, 3=Major, 4=Critical)"
         )
     
     try:
@@ -572,10 +572,10 @@ async def get_graphql_preview(service: str, token: str, severity: int):
         raise HTTPException(status_code=404, detail="Web interface disabled")
     
     # Validate severity
-    if severity not in [1, 2, 3, 4]:
+    if severity not in [0, 1, 2, 3, 4]:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid severity: {severity}. Must be 1-4 (1=Notice, 2=Minor, 3=Major, 4=Critical)"
+            detail=f"Invalid severity: {severity}. Must be 0-4 (0=Healthy, 1=Notice, 2=Minor, 3=Major, 4=Critical)"
         )
     
     graphql_preview = sl1_graphql_service.get_graphql_preview(service, token, severity)
@@ -586,5 +586,5 @@ async def get_graphql_preview(service: str, token: str, severity: int):
         "service": service,
         "token": token,
         "severity": severity,
-        "severity_name": {1: "Notice", 2: "Minor", 3: "Major", 4: "Critical"}.get(severity, "Unknown")
+        "severity_name": {0: "Healthy", 1: "Notice", 2: "Minor", 3: "Major", 4: "Critical"}.get(severity, "Unknown")
     }

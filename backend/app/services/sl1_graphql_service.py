@@ -50,7 +50,7 @@ class SL1GraphQLService:
         Args:
             service_name: Name of the service (e.g., 'github', 'meraki')
             token: The webhook token to match in regularExpression1
-            severity: Severity level (1=Notice, 2=Minor, 3=Major, 4=Critical)
+            severity: Severity level (0=Healthy, 1=Notice, 2=Minor, 3=Major, 4=Critical)
             
         Returns:
             Dict containing success status and policy ID or error message
@@ -61,11 +61,11 @@ class SL1GraphQLService:
                 "error": "SL1 GraphQL feature is not enabled or configured"
             }
         
-        # Validate severity (1-4, where 4 is most critical)
-        if severity not in [1, 2, 3, 4]:
+        # Validate severity (0-4, where 0 is healthy and 4 is most critical)
+        if severity not in [0, 1, 2, 3, 4]:
             return {
                 "success": False,
-                "error": f"Invalid severity: {severity}. Must be 1-4 (1=Notice, 4=Critical)"
+                "error": f"Invalid severity: {severity}. Must be 0-4 (0=Healthy, 1=Notice, 4=Critical)"
             }
         
         # Debug logging
@@ -179,7 +179,7 @@ class SL1GraphQLService:
         Args:
             service_name: Name of the service
             token: The webhook token
-            severity: Severity level (1-4)
+            severity: Severity level (0-4)
             
         Returns:
             Formatted GraphQL mutation string
