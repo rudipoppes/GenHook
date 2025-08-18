@@ -87,6 +87,7 @@ class SL1GraphQLService:
             regularExpression2: ""
             regularExpressionSearch: true
             severity: "%d"
+            source: 6
           ) {
             id
           }
@@ -196,6 +197,7 @@ class SL1GraphQLService:
     regularExpression2: ""
     regularExpressionSearch: true
     severity: "%d"
+    source: 6
   ) {
     id
   }
