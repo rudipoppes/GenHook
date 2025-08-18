@@ -132,8 +132,8 @@ class SL1GraphQLService:
                         }
                     
                     # Extract policy ID from successful response
-                    if "data" in result and "eventPolicyCreate" in result["data"]:
-                        policy_id = result["data"]["eventPolicyCreate"].get("id")
+                    if "data" in result and "createEventPolicy" in result["data"]:
+                        policy_id = result["data"]["createEventPolicy"].get("id")
                         logger.info(f"Successfully created SL1 Event Policy with ID: {policy_id}")
                         return {
                             "success": True,
