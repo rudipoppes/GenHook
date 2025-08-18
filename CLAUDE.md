@@ -1,5 +1,11 @@
 # GenHook Project Notes
 
+## Quick Start for Claude
+To get Claude up to speed with this project, tell Claude:
+**"Read through the CLAUDE.md file and provide me with your understanding"**
+
+This will load all project context including architecture, configuration formats, deployment setup, and current Git status.
+
 ## Project Overview
 
 ### System Purpose
@@ -818,3 +824,86 @@ Each log entry (one per line for easy parsing):
 2. **Editing Existing Config**: Click edit → Webhook type auto-selected → Load recent payloads → Test changes
 3. **Real-time Testing**: Load actual webhook data to test template changes instantly
 4. **No Manual Copy/Paste**: Direct integration between logs and configuration interface
+
+## Git Workflow & Version Control
+
+### Current Branch Status
+- **Active Feature Branch**: `feature/sl1-event-policy-creation`
+  - Adds SL1 GraphQL event policy creation functionality
+  - Branched from main at commit: `f3103a5`
+  - GraphQL work starts at: `5373232`
+  - Status: Awaiting ScienceLogic response on GraphQL severity field issue
+
+### Working with Git
+
+#### Check Current Status
+```bash
+git status                                    # See uncommitted changes
+git diff origin/main...HEAD --name-only      # Files changed vs main
+git log --oneline -10                        # Recent commits
+```
+
+#### Save Work in Progress
+```bash
+git add -A
+git commit -m "WIP: Description of changes"
+git push origin feature/sl1-event-policy-creation
+```
+
+#### Rollback Options (If GraphQL Feature Can't Be Fixed)
+
+**Option 1: Switch to Clean Main**
+```bash
+git checkout main
+git pull origin main
+# Continue development from main without GraphQL features
+```
+
+**Option 2: Create New Feature Branch from Main**
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/new-feature-name
+```
+
+**Option 3: Cherry-Pick Specific Commits**
+```bash
+git checkout main
+git cherry-pick fae40db  # Example: keep documentation updates
+```
+
+**Option 4: Complete Reset to Before GraphQL**
+```bash
+git checkout main
+git reset --hard f3103a5  # Commit where feature branched from main
+```
+
+### Important Git Commands
+
+#### Before Starting Work
+```bash
+git fetch origin
+git status
+git pull origin feature/sl1-event-policy-creation  # If continuing feature work
+```
+
+#### Check for Merge Conflicts
+```bash
+git fetch origin
+git merge origin/main --no-commit --no-ff
+git merge --abort  # Cancel the test merge
+```
+
+#### Stash Changes Temporarily
+```bash
+git stash save "Description of WIP"
+# Do other work...
+git stash pop  # Restore stashed changes
+```
+
+### Branch Management Strategy
+1. **Feature Branches**: Create from main for new features
+2. **Commit Often**: Small, focused commits with clear messages
+3. **Push Regularly**: Backup work to GitHub
+4. **Document Changes**: Update CLAUDE.md when adding major features
+5. **Test Before Merge**: Ensure no conflicts with main branch
