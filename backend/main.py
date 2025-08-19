@@ -61,6 +61,11 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
     """
     Tokenized webhook endpoint that validates token before processing
     """
+    # Variables to track payload and error info for logging
+    parsed_payload = {}
+    error_details = None
+    
+    # First, parse the payload outside of the main try-catch to capture it for unknown token logging
     try:
         # Check for completely empty body first
         body = await request.body()
@@ -73,12 +78,12 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
                 "service": service
             }
         
-        # Parse JSON from non-empty body
-        payload = await request.json()
+        # Parse JSON from non-empty body (capture payload before token validation)
+        parsed_payload = await request.json()
         logger.info(f"Received {service} webhook")
         
         # Handle empty JSON payload
-        if not payload:
+        if not parsed_payload:
             logger.info(f"Empty payload received for {service} webhook - returning 200 OK")
             response.status_code = 200
             return {
@@ -86,27 +91,74 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
                 "message": "Empty payload received and ignored",
                 "service": service
             }
+    except ValueError as e:
+        logger.error(f"Invalid JSON in {service.lower()}:{token} webhook: {e}")
         
-        # Note: Payload logging is handled in log_processing_result() later
+        # Log error if we have a payload logger
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            try:
+                body = await request.body()
+                log_payload = {"raw_body": body.decode("utf-8", errors="ignore")}
+                
+                webhook_logger.log_processing_result(
+                    service.lower(),
+                    log_payload,
+                    "error",
+                    error_message=f"Invalid JSON: {str(e)}",
+                    metadata={
+                        "source_ip": request.client.host if request.client else "unknown",
+                        "token": token
+                    }
+                )
+            except:
+                pass  # Don't fail if logging fails
         
-        webhook_config = get_webhook_config()
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    
+    # Now validate token (outside of try-catch so HTTPException isn't caught)
+    webhook_config = get_webhook_config()
+    
+    # Build the base config key with service_token format (lowercase service to match config)
+    base_config_key = f"{service.lower()}_{token}"
+    
+    # Find the matching config key
+    config_key = None
+    config_line = None
+    alignment_type = None
+    alignment_id = None
+    
+    # Check if exact key exists (could be old or new format)
+    if base_config_key in webhook_config:
+        config_key = base_config_key
+        config_line = webhook_config[config_key]
+    
+    # Handle invalid token case with actual payload logging
+    if config_key is None:
+        error_details = f"Invalid webhook token for '{service}'"
         
-        # Build the base config key with service_token format (lowercase service to match config)
-        base_config_key = f"{service.lower()}_{token}"
+        # Try to log unknown payload if feature is enabled
+        webhook_logger = get_webhook_logger()
+        if webhook_logger:
+            try:
+                webhook_logger.log_unknown_payload(
+                    service.lower(),
+                    parsed_payload,
+                    error_details,
+                    metadata={
+                        "source_ip": request.client.host if request.client else "unknown",
+                        "user_agent": request.headers.get("user-agent", "unknown"),
+                        "content_length": request.headers.get("content-length", "unknown"),
+                        "token": token
+                    }
+                )
+            except Exception as log_error:
+                logger.warning(f"Failed to log unknown payload: {log_error}")
         
-        # Find the matching config key
-        config_key = None
-        config_line = None
-        alignment_type = None
-        alignment_id = None
-        
-        # Check if exact key exists (could be old or new format)
-        if base_config_key in webhook_config:
-            config_key = base_config_key
-            config_line = webhook_config[config_key]
-        
-        if config_key is None:
-            raise HTTPException(status_code=404, detail=f"Invalid webhook token for '{service}'")
+        raise HTTPException(status_code=404, detail=error_details)
+    
+    # Now process the webhook with valid token
+    try:
         
         # Parse config line - support both old and new formats
         if '::' in config_line:
@@ -169,7 +221,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
             else:
                 fields.append(field)
         
-        extracted_data = extract_fields(payload, fields)
+        extracted_data = extract_fields(parsed_payload, fields)
         logger.info(f"Fields to extract: {fields}")
         logger.info(f"Extracted data keys: {list(extracted_data.keys())}")
         
@@ -195,7 +247,7 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
         if webhook_logger:
             webhook_logger.log_processing_result(
                 service.lower(),
-                payload,
+                parsed_payload,
                 "success" if success else "sl1_failed",
                 generated_message=final_message,
                 metadata={
@@ -223,28 +275,6 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
                 "service_token": f"{service}:{token}"
             }
             
-    except ValueError as e:
-        logger.error(f"Invalid JSON in {service.lower()}:{token} webhook: {e}")
-        
-        # Log error if we have a payload logger
-        webhook_logger = get_webhook_logger()
-        if webhook_logger:
-            try:
-                body = await request.body()
-                webhook_logger.log_processing_result(
-                    service.lower(),
-                    {"raw_body": body.decode("utf-8", errors="ignore")},
-                    "error",
-                    error_message=f"Invalid JSON: {str(e)}",
-                    metadata={
-                        "source_ip": request.client.host if request.client else "unknown",
-                        "token": token
-                    }
-                )
-            except:
-                pass  # Don't fail if logging fails
-        
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         logger.error(f"Error processing {service.lower()}_{token} webhook: {e}")
         
@@ -254,11 +284,12 @@ async def receive_webhook(service: str, token: str, request: Request, response: 
             try:
                 webhook_logger.log_processing_result(
                     service.lower(),
-                    {},  # No payload available in this case
+                    parsed_payload,  # Use captured payload instead of empty dict
                     "error",
                     error_message=str(e),
                     metadata={
-                        "source_ip": request.client.host if request.client else "unknown"
+                        "source_ip": request.client.host if request.client else "unknown",
+                        "token": token
                     }
                 )
             except:

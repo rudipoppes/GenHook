@@ -49,6 +49,15 @@ backup_count = 5
 # Log file name
 log_file_name = payload.log
 
+# Unknown payload logging (for invalid tokens/unconfigured webhooks)
+# Set to true to log actual payloads when webhook tokens are invalid
+# This helps with debugging webhook setup and creating new configurations
+log_unknown_payloads = false
+# Maximum size in bytes for unknown payloads to log (50KB default)
+unknown_payload_max_size = 51200
+# Maximum number of unknown payloads to log per day (prevents abuse)
+unknown_payload_daily_limit = 100
+
 [sl1_graphql]
 # Enable SL1 Event Policy creation via GraphQL
 enabled = true

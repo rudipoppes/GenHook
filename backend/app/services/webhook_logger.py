@@ -34,6 +34,14 @@ class WebhookLogger:
         self.backup_count = config.getint('webhook_logging', 'backup_count', fallback=5)
         self.log_file_name = config.get('webhook_logging', 'log_file_name', fallback='payload.log')
         
+        # Unknown payload logging settings (disabled by default for production safety)
+        self.log_unknown_payloads = config.getboolean('webhook_logging', 'log_unknown_payloads', fallback=False)
+        self.unknown_payload_max_size = config.getint('webhook_logging', 'unknown_payload_max_size', fallback=51200)  # 50KB
+        self.unknown_payload_daily_limit = config.getint('webhook_logging', 'unknown_payload_daily_limit', fallback=100)
+        
+        # Track daily unknown payload counts (reset daily)
+        self._unknown_count_cache = {}  # Format: {date_str: count}
+        
         # Cache for created loggers to avoid recreating them
         self._loggers = {}
         self._lock = Lock()  # Thread safety for logger creation
@@ -243,6 +251,96 @@ class WebhookLogger:
         if error_message:
             log_metadata["error_message"] = error_message
             
+        return self.log_payload(webhook_type, payload, log_metadata)
+    
+    def _should_log_unknown_payload(self, payload: Dict[str, Any], error_message: str) -> bool:
+        """
+        Check if an unknown payload should be logged based on configuration and limits.
+        
+        Args:
+            payload: The webhook payload
+            error_message: The error message
+            
+        Returns:
+            bool: True if the payload should be logged
+        """
+        # Feature must be enabled
+        if not self.log_unknown_payloads:
+            return False
+        
+        # Must be an "invalid token" error (not other types of errors)
+        if "Invalid webhook token" not in error_message:
+            return False
+            
+        # Check payload size limit
+        try:
+            payload_size = len(json.dumps(payload).encode('utf-8'))
+            if payload_size > self.unknown_payload_max_size:
+                self.logger.warning(f"Unknown payload too large ({payload_size} bytes), skipping log")
+                return False
+        except Exception:
+            # If we can't serialize, don't log
+            return False
+        
+        # Check daily limit
+        today = datetime.now().strftime('%Y-%m-%d')
+        current_count = self._unknown_count_cache.get(today, 0)
+        
+        if current_count >= self.unknown_payload_daily_limit:
+            # Only log warning once per day
+            if current_count == self.unknown_payload_daily_limit:
+                self.logger.warning(f"Daily unknown payload limit ({self.unknown_payload_daily_limit}) reached")
+            return False
+        
+        # Update counter
+        self._unknown_count_cache[today] = current_count + 1
+        
+        # Clean old dates from cache (keep only last 7 days)
+        cutoff_days = 7
+        all_dates = list(self._unknown_count_cache.keys())
+        for date_str in all_dates:
+            try:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                days_old = (datetime.now() - date_obj).days
+                if days_old > cutoff_days:
+                    del self._unknown_count_cache[date_str]
+            except ValueError:
+                # Invalid date format, remove it
+                del self._unknown_count_cache[date_str]
+        
+        return True
+    
+    def log_unknown_payload(
+        self,
+        webhook_type: str,
+        payload: Dict[str, Any],
+        error_message: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Log an unknown webhook payload (invalid token) if enabled and within limits.
+        
+        Args:
+            webhook_type: The webhook type
+            payload: The actual webhook payload
+            error_message: The error message
+            metadata: Additional metadata
+            
+        Returns:
+            bool: True if logged successfully
+        """
+        if not self._should_log_unknown_payload(payload, error_message):
+            return False
+        
+        # Create enhanced metadata for unknown payloads
+        log_metadata = metadata or {}
+        log_metadata.update({
+            "processing_status": "unknown_token",
+            "error_message": error_message,
+            "payload_size": len(json.dumps(payload).encode('utf-8')),
+            "daily_unknown_count": self._unknown_count_cache.get(datetime.now().strftime('%Y-%m-%d'), 0)
+        })
+        
         return self.log_payload(webhook_type, payload, log_metadata)
     
     def get_recent_payloads(self, webhook_type: str, limit: int = 10) -> list:
