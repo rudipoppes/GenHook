@@ -13,6 +13,8 @@ GenHook is a production-ready webhook processing system that receives webhooks f
 - **🔐 Tokenized Security**: Unique tokens per webhook configuration for enhanced security
 - **🌐 Web Configuration Interface**: Visual field selection and configuration management
 - **🔒 SL1 Integration**: Direct API integration with retry logic and error handling
+- **🔍 Unknown Payload Logging**: Capture actual JSON payloads for invalid tokens (debugging)
+- **🎭 Token Display in UI**: Shows attempted tokens in dropdown for easy debugging
 - **🏗️ Production-Ready**: Nginx proxy, process management, comprehensive logging
 - **📊 Extensible**: Easy to add new webhook sources and message templates
 

@@ -465,6 +465,16 @@ log_rotation = daily
 - ✅ **Message Prefixing**: SL1 messages include `service:token:` prefix for identification
 - ✅ **Production-Tested**: Full tokenization and alignment system tested and operational
 
+🔍 **Phase 7**: Unknown Payload Logging & Enhanced Debugging (COMPLETED)
+- ✅ **Unknown Payload Capture**: Logs actual JSON payloads when webhook tokens are invalid (instead of empty `{}`)
+- ✅ **Production-Safe Defaults**: Feature disabled by default (`log_unknown_payloads = false`)
+- ✅ **Configurable Limits**: 50KB max payload size, 100 daily limit to prevent abuse
+- ✅ **Service-Agnostic**: Works for all webhook types (GitHub, Stripe, Slack, AWS, Meraki, etc.)
+- ✅ **Rich Metadata**: Logs include source IP, user agent, content length, token, and daily count
+- ✅ **Token Display in UI**: Dropdown shows attempted tokens for unknown_token logs (e.g., "unknown_token: test_123")
+- ✅ **Enhanced Error Handling**: Proper 404 responses for invalid tokens instead of 500 errors
+- ✅ **Debug-Friendly**: Easily identify which tokens were attempted without checking backend logs
+
 🔧 **Next Phases**: Multi-Threading & Production Features (PLANNED)
 - 🟡 Thread pool implementation for high-volume processing
 - 🟡 Advanced monitoring and metrics collection
@@ -696,6 +706,11 @@ base_directory = logs/webhooks
 max_bytes = 10485760  # 10MB per file
 backup_count = 5  # Keep 5 backup files
 log_file_name = payload.log
+
+# Unknown payload logging (for invalid tokens/unconfigured webhooks)
+log_unknown_payloads = false  # Set to true for debugging webhook setup
+unknown_payload_max_size = 51200  # 50KB max per payload
+unknown_payload_daily_limit = 100  # Max unknown payloads per day
 ```
 
 ### Directory Structure
@@ -717,6 +732,7 @@ backend/logs/
 - **Auto-populate functionality** in test payload fields
 - **Edit Mode Integration** with auto-populated webhook type selection
 - **Visual Cards** - Green for recent payloads, blue for manual input
+- **Unknown Token Display** - Shows attempted token in dropdown for debugging (e.g., "timestamp (unknown_token: test_123)")
 - **API endpoints**: 
   - `GET /api/webhook-logs/{webhook_type}/recent?limit=10` - Get recent payloads
   - `GET /api/webhook-logs/types` - Get available webhook types
@@ -739,22 +755,34 @@ git update-index --skip-worktree backend/config/webhook-config.ini
 ```
 
 #### Deploying Updates
+
+**AWS Deployment Commands (Run one command per line):**
 ```bash
-# As genhook user
-sudo su - genhook
-cd /opt/genhook
+# Pull latest changes from main
+sudo -u genhook git -C /opt/genhook pull origin main
 
-# Stash local changes
-git stash save "Production config - $(date +%Y%m%d_%H%M%S)"
+# Restart the service
+sudo supervisorctl restart genhook
+```
 
-# Pull updates
-git pull origin main  # or feature branch
+**Testing Feature Branches on AWS:**
+```bash
+# Fetch and checkout feature branch
+sudo -u genhook git -C /opt/genhook fetch origin
+sudo -u genhook git -C /opt/genhook checkout feature/branch-name
+sudo supervisorctl restart genhook
 
-# Restore local changes
-git stash pop
+# Return to main after testing
+sudo -u genhook git -C /opt/genhook checkout main
+sudo supervisorctl restart genhook
+```
 
-# Exit and restart
-exit
+**Merging Feature Branches on AWS:**
+```bash
+# Merge feature branch to main
+sudo -u genhook git -C /opt/genhook checkout main
+sudo -u genhook git -C /opt/genhook merge feature/branch-name
+sudo -u genhook git -C /opt/genhook push origin main
 sudo supervisorctl restart genhook
 ```
 
@@ -828,11 +856,10 @@ Each log entry (one per line for easy parsing):
 ## Git Workflow & Version Control
 
 ### Current Branch Status
-- **Active Feature Branch**: `feature/sl1-event-policy-creation`
-  - Adds SL1 GraphQL event policy creation functionality
-  - Branched from main at commit: `f3103a5`
-  - GraphQL work starts at: `5373232`
-  - Status: Awaiting ScienceLogic response on GraphQL severity field issue
+- **Main Branch**: All features merged and production-ready
+  - SL1 GraphQL event policy creation (merged)
+  - Unknown payload logging (merged)
+  - Token display enhancement (merged)
 
 ### Working with Git
 
