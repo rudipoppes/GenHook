@@ -15,6 +15,7 @@ GenHook is a production-ready webhook processing system that receives webhooks f
 - **🔒 SL1 Integration**: Direct API integration with retry logic and error handling
 - **🔍 Unknown Payload Logging**: Capture actual JSON payloads for invalid tokens (debugging)
 - **🎭 Token Display in UI**: Shows attempted tokens in dropdown for easy debugging
+- **📝 Service Name Case Preservation**: Maintains exact case of service names as entered by users
 - **🏗️ Production-Ready**: Nginx proxy, process management, comprehensive logging
 - **📊 Extensible**: Easy to add new webhook sources and message templates
 
@@ -219,6 +220,13 @@ python test_sl1_integration.py
 - [x] Tokenized webhook URLs for enhanced security
 - [x] Dynamic configuration loading without restarts
 - [x] Automatic webhook log directory cleanup
+
+### ✅ Phase 8: Service Name Case Preservation (Complete)
+- [x] Preserve exact case of service names as entered by users
+- [x] Remove forced lowercase conversions throughout system
+- [x] Maintain backward compatibility with existing configurations
+- [x] Update error messages to show original case
+- [x] Case-sensitive logging for better debugging
 
 ### 🟡 Phase 2: Multi-Threading (Planned)
 - [ ] Thread pool implementation
