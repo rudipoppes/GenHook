@@ -82,6 +82,7 @@ deployment_guide.html
 
 # Webhook configuration (environment-specific, modified by web interface)
 /backend/config/webhook-config.ini
+/backend/config/app-config.ini
 
 # Runtime files
 server.log
