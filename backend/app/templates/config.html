@@ -1840,7 +1840,13 @@
                             const timestamp = new Date(entry.timestamp).toLocaleString();
                             const status = entry.processing_status || 'logged';
                             
-                            option.textContent = `${timestamp} (${status})`;
+                            // Show token for unknown_token status to help with debugging
+                            let displayText = `${timestamp} (${status})`;
+                            if (status === 'unknown_token' && entry.token) {
+                                displayText = `${timestamp} (${status}: ${entry.token})`;
+                            }
+                            
+                            option.textContent = displayText;
                             option.dataset.payload = JSON.stringify(entry.payload);
                             select.appendChild(option);
                         });
